@@ -154,7 +154,6 @@ public class PlayerContoller : MonoBehaviour
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
         if (h > 1)
         {
-            Debug.Log(hits[1].normal);
             if (hits[1].collider.tag == "ground")
             {
    
@@ -162,7 +161,6 @@ public class PlayerContoller : MonoBehaviour
                         transform.up,
                         hits[1].normal);
                 transform.rotation *= q;
-                Debug.Log(q);
             }
 
         }

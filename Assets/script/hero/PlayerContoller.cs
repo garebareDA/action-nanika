@@ -46,15 +46,21 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
+        float speedUp = 1;
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            speedUp = 1.5f;
+        }
+
         if (gravityMode == "up" || gravityMode=="down")
         {
-            rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
+            rb.velocity = new Vector2(moveInput * speed * speedUp, rb.velocity.y);
         }else if (gravityMode == "right")
         {
-            rb.velocity = new Vector2(rb.velocity.x, moveInput * speed);
+            rb.velocity = new Vector2(rb.velocity.x, moveInput * speed * speedUp);
         }else if(gravityMode == "left")
         {
-            rb.velocity = new Vector2(rb.velocity.x, moveInput * -speed);
+            rb.velocity = new Vector2(rb.velocity.x, moveInput * -speed * speedUp);
         }
     }
 
@@ -100,7 +106,6 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitLeft.collider.tag == "ground")
             {
-                Debug.Log(hitLeft.collider);
                 return moveInput > 0;    
             }
         }
@@ -112,7 +117,6 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitRight.collider.tag == "ground")
             {
-                Debug.Log(hitRight.collider);
                 return moveInput < 0;
             }
         }

@@ -50,6 +50,9 @@ public class PlayerContoller : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftShift))
         {
             speedUp = 1.5f;
+        }else if (!isGounded)
+        {
+            speedUp = 0.4f;
         }
 
         if (gravityMode == "up" || gravityMode=="down")

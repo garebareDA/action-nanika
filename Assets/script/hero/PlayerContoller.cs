@@ -21,17 +21,30 @@ public class PlayerContoller : MonoBehaviour
     public float gravity;
     public string gravityMode;
 
-    private float angleTmp;
+    public float isStop;
+
+    private Transform gravityDown;
+    private Transform gravityLeft;
+    private Transform gravityRight;
+
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        gravityDown = transform.Find("gravityDown").gameObject.transform;
+        gravityLeft = transform.Find("gravityLeft").gameObject.transform;
+        gravityRight = transform.Find("gravityRight").gameObject.transform;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
+        bool checkeRay = checkedRay(moveInput);
+        if (!checkeRay)
+        {
+            return;
+        }
 
         if (gravityMode == "up" || gravityMode=="down")
         {
@@ -75,8 +88,36 @@ public class PlayerContoller : MonoBehaviour
  
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
+        rayGravity();
+    }
 
-        ray();
+    private bool checkedRay(float moveInput)
+    {
+        Ray rayLeft = new Ray(gravityLeft.position, -gravityLeft.up);
+        Debug.DrawRay(rayLeft.origin, rayLeft.direction, Color.red);
+        RaycastHit2D hitLeft = Physics2D.Raycast(rayLeft.origin, rayLeft.direction, isStop);
+        if (hitLeft.collider != null)
+        {
+            if (hitLeft.collider.tag == "ground")
+            {
+                Debug.Log(hitLeft.collider);
+                return moveInput > 0;    
+            }
+        }
+
+        Ray rayRight = new Ray(gravityRight.position, -gravityRight.up);
+        Debug.DrawRay(rayRight.origin, rayRight.direction, Color.red);
+        RaycastHit2D hitRight = Physics2D.Raycast(rayRight.origin, rayRight.direction, isStop);
+        if (hitRight.collider != null)
+        {
+            if (hitRight.collider.tag == "ground")
+            {
+                Debug.Log(hitRight.collider);
+                return moveInput < 0;
+            }
+        }
+
+        return true;
     }
 
     private Vector3 gravietyDirection(string mode)
@@ -123,32 +164,9 @@ public class PlayerContoller : MonoBehaviour
         }
     }
 
-    private Ray getGravityRay()
+    private void rayGravity()
     {
-        Ray ray = new Ray(transform.position, -transform.up);
-        if (gravityMode == "down")
-        {
-            ray = new Ray(transform.position + new Vector3(0, -0.5f, 0), -transform.up);
-        }
-        else if (gravityMode == "up")
-        {
-            ray = new Ray(transform.position + new Vector3(0, 0.5f, 0), -transform.up);
-        }
-        else if (gravityMode == "left")
-        {
-            ray = new Ray(transform.position + new Vector3(-0.5f, 0, 0), -transform.up);
-        }
-        else if (gravityMode == "right")
-        {
-            ray = new Ray(transform.position + new Vector3(0.5f, 0, 0), -transform.up);
-        }
-        return ray;
-    }
-
-    private void ray()
-    {
-        Ray ray = getGravityRay();
-        
+        Ray ray = new Ray(gravityDown.position, -gravityDown.up);
         RaycastHit2D[] hits = new RaycastHit2D[2];
         int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
@@ -156,7 +174,6 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hits[1].collider.tag == "ground")
             {
-   
                 Quaternion q = Quaternion.FromToRotation(
                         transform.up,
                         hits[1].normal);
@@ -168,7 +185,7 @@ public class PlayerContoller : MonoBehaviour
 
     public void changeGravityMode(string mode)
     {
-        ray();
+        rayGravity();
         if (gravityMode != mode)
         {
             isJumpinig = false;

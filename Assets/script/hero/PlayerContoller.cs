@@ -8,6 +8,7 @@ public class PlayerContoller : MonoBehaviour
     public float speed;
     public float jumpForce;
     private float moveInput;
+    private Vector2 movementNomal = new Vector2(0, 0);
 
     private bool isGounded;
     public Transform feetPos;
@@ -24,21 +25,28 @@ public class PlayerContoller : MonoBehaviour
     public float isStop;
 
     private Transform gravityDown;
-    private Transform gravityLeft;
-    private Transform gravityRight;
-
+    private Transform gravityLeftUp;
+    private Transform gravityLeftDown;
+    private Transform gravityRightUp;
+    private Transform gravityRightDown;
+    
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        gravityDown = transform.Find("gravityDown").gameObject.transform;
-        gravityLeft = transform.Find("gravityLeft").gameObject.transform;
-        gravityRight = transform.Find("gravityRight").gameObject.transform;
+        Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
+        gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
+        gravityLeftUp = gravityTrandform.Find("gravityLeftUp").gameObject.transform;
+        gravityLeftDown = gravityTrandform.Find("gravityLeftDown").gameObject.transform;
+        gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
+        gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
+
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        rayGravity();
         moveInput = Input.GetAxisRaw("Horizontal");
         bool checkeRay = checkedRay(moveInput);
         if (!checkeRay)
@@ -55,15 +63,29 @@ public class PlayerContoller : MonoBehaviour
             speedUp = 0.4f;
         }
 
+        RaycastHit2D hit = Physics2D.Raycast(gravityDown.position, -Vector2.up, 1f, 8);
+        if (hit.collider != null && Mathf.Abs(hit.normal.x) > 0.1f)
+        {
+            if (!isGounded)
+            {
+                movementNomal = hit.normal;
+            }
+            else
+            {
+                movementNomal = Vector2.zero;
+            }
+            
+        }
+
         if (gravityMode == "up" || gravityMode=="down")
         {
-            rb.velocity = new Vector2(moveInput * speed * speedUp, rb.velocity.y);
+            rb.velocity = new Vector2(moveInput * speed * speedUp - movementNomal.x, rb.velocity.y - movementNomal.y);
         }else if (gravityMode == "right")
         {
-            rb.velocity = new Vector2(rb.velocity.x, moveInput * speed * speedUp);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * speed * speedUp);
         }else if(gravityMode == "left")
         {
-            rb.velocity = new Vector2(rb.velocity.x, moveInput * -speed * speedUp);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * -speed * speedUp);
         }
     }
 
@@ -102,23 +124,47 @@ public class PlayerContoller : MonoBehaviour
 
     private bool checkedRay(float moveInput)
     {
-        Ray rayLeft = new Ray(gravityLeft.position, -gravityLeft.up);
-        Debug.DrawRay(rayLeft.origin, rayLeft.direction, Color.red);
-        RaycastHit2D hitLeft = Physics2D.Raycast(rayLeft.origin, rayLeft.direction, isStop);
-        if (hitLeft.collider != null)
+        Ray rayLeftUp = new Ray(gravityLeftUp.position, -gravityLeftUp.up);
+        Debug.DrawRay(rayLeftUp.origin, rayLeftUp.direction, Color.red);
+        RaycastHit2D hitLeftUp = Physics2D.Raycast(rayLeftUp.origin, rayLeftUp.direction, isStop);
+
+        Ray rayLeftDown = new Ray(gravityLeftDown.position, -gravityLeftUp.up);
+        Debug.DrawRay(rayLeftDown.origin, rayLeftDown.direction, Color.red);
+        RaycastHit2D hitLeftDown = Physics2D.Raycast(rayLeftDown.origin, rayLeftDown.direction, isStop);
+        if (hitLeftUp.collider != null)
         {
-            if (hitLeft.collider.tag == "ground")
+            if (hitLeftUp.collider.tag == "ground")
             {
-                return moveInput > 0;    
+                return moveInput > 0;
             }
         }
 
-        Ray rayRight = new Ray(gravityRight.position, -gravityRight.up);
-        Debug.DrawRay(rayRight.origin, rayRight.direction, Color.red);
-        RaycastHit2D hitRight = Physics2D.Raycast(rayRight.origin, rayRight.direction, isStop);
-        if (hitRight.collider != null)
+        if(hitLeftDown.collider != null)
         {
-            if (hitRight.collider.tag == "ground")
+            if(hitLeftDown.collider.tag == "ground")
+            {
+                return moveInput > 0;
+            }
+        }
+
+        Ray rayRightUp = new Ray(gravityRightUp.position, -gravityRightUp.up);
+        Debug.DrawRay(rayRightUp.origin, rayRightUp.direction, Color.red);
+        RaycastHit2D hitRightUp = Physics2D.Raycast(rayRightUp.origin, rayRightUp.direction, isStop);
+
+        Ray rayRightDown = new Ray(gravityRightDown.position, -gravityRightDown.up);
+        Debug.DrawRay(rayRightDown.origin, rayRightDown.direction, Color.red);
+        RaycastHit2D hitRightDown = Physics2D.Raycast(rayRightDown.origin, rayRightDown.direction, isStop);
+        if (hitRightUp.collider != null)
+        {
+            if (hitRightUp.collider.tag == "ground")
+            {
+                return moveInput < 0;
+            }
+        }
+
+        if(hitRightDown.collider != null)
+        {
+            if(hitRightDown.collider.tag == "ground")
             {
                 return moveInput < 0;
             }
@@ -181,12 +227,12 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hits[1].collider.tag == "ground")
             {
+                movementNomal = new Vector2(hits[1].normal.x, hits[1].normal.y);
                 Quaternion q = Quaternion.FromToRotation(
                         transform.up,
                         hits[1].normal);
                 transform.rotation *= q;
             }
-
         }
     }
 

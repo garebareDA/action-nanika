@@ -77,12 +77,26 @@ public class PlayerContoller : MonoBehaviour
         if (moveInput < 0)
         {
             animator.SetBool("walk", true);
-            transform.localScale = new Vector3(-5, 5, 0);
+            if (gravityMode == "up")
+            {
+                transform.localScale = new Vector3(5, 5, 0);
+            }
+            else
+            {
+                transform.localScale = new Vector3(-5, 5, 0);
+            }
         }
         else if (moveInput > 0)
         {
             animator.SetBool("walk", true);
-            transform.localScale = new Vector3(5, 5, 0);
+            if(gravityMode == "up")
+            {
+                transform.localScale = new Vector3(-5, 5, 0);
+            }
+            else
+            {
+                transform.localScale = new Vector3(5, 5, 0);
+            }
         }
         else
         {
@@ -102,13 +116,16 @@ public class PlayerContoller : MonoBehaviour
             }
         }
 
-        if (gravityMode == "up" || gravityMode=="down")
+        if (gravityMode == "up")
+        {
+            rb.velocity = new Vector2(moveInput * -speed * speedUp - movementNomal.x, rb.velocity.y - movementNomal.y);
+        } else if (gravityMode == "down")
         {
             rb.velocity = new Vector2(moveInput * speed * speedUp - movementNomal.x, rb.velocity.y - movementNomal.y);
-        }else if (gravityMode == "right")
+        } else if (gravityMode == "right")
         {
             rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * speed * speedUp);
-        }else if(gravityMode == "left")
+        } else if (gravityMode == "left")
         {
             rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * -speed * speedUp);
         }

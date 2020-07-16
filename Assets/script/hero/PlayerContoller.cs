@@ -77,26 +77,12 @@ public class PlayerContoller : MonoBehaviour
         if (moveInput < 0)
         {
             animator.SetBool("walk", true);
-            if (gravityMode == "up")
-            {
-                transform.localScale = new Vector3(5, 5, 0);
-            }
-            else
-            {
-                transform.localScale = new Vector3(-5, 5, 0);
-            }
+            transform.localScale = new Vector3(-5, 5, 0);
         }
         else if (moveInput > 0)
         {
             animator.SetBool("walk", true);
-            if(gravityMode == "up")
-            {
-                transform.localScale = new Vector3(-5, 5, 0);
-            }
-            else
-            {
-                transform.localScale = new Vector3(5, 5, 0);
-            }
+            transform.localScale = new Vector3(5, 5, 0);
         }
         else
         {

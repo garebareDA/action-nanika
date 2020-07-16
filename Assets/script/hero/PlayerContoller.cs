@@ -29,38 +29,64 @@ public class PlayerContoller : MonoBehaviour
     private Transform gravityLeftDown;
     private Transform gravityRightUp;
     private Transform gravityRightDown;
+
+    private Animator animator;
+
+
     
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
         gravityLeftUp = gravityTrandform.Find("gravityLeftUp").gameObject.transform;
         gravityLeftDown = gravityTrandform.Find("gravityLeftDown").gameObject.transform;
         gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
-
     }
 
     // Update is called once per frame
     void FixedUpdate()
-    {
-        rayGravity();
-        moveInput = Input.GetAxisRaw("Horizontal");
-        bool checkeRay = checkedRay(moveInput);
+    {   bool checkeRay = checkedRay(moveInput);
         if (!checkeRay)
         {
             return;
         }
+        rayGravity();
+        moveInput = Input.GetAxisRaw("Horizontal");
+
+        bool shiftInput = Input.GetKey(KeyCode.LeftShift);
 
         float speedUp = 1;
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (shiftInput && moveInput != 0)
         {
             speedUp = 1.5f;
-        }else if (!isGounded)
+            animator.SetBool("dash", true);
+        }else if (!shiftInput || moveInput == 0)
+        {
+            animator.SetBool("dash", false);
+        }
+
+        if (!isGounded && !shiftInput)
         {
             speedUp = 0.4f;
+        }
+
+        if (moveInput < 0)
+        {
+            animator.SetBool("walk", true);
+            transform.localScale = new Vector3(-5, 5, 0);
+        }
+        else if (moveInput > 0)
+        {
+            animator.SetBool("walk", true);
+            transform.localScale = new Vector3(5, 5, 0);
+        }
+        else
+        {
+            animator.SetBool("walk", false);
         }
 
         RaycastHit2D hit = Physics2D.Raycast(gravityDown.position, -Vector2.up, 1f, 8);
@@ -74,7 +100,6 @@ public class PlayerContoller : MonoBehaviour
             {
                 movementNomal = Vector2.zero;
             }
-            
         }
 
         if (gravityMode == "up" || gravityMode=="down")
@@ -92,8 +117,17 @@ public class PlayerContoller : MonoBehaviour
     void Update()
     {
         isGounded = Physics2D.OverlapCircle(feetPos.position, checkRadius, whatIsGournd);
-        if(isGounded == true && Input.GetKeyDown(KeyCode.Space))
+
+        if (isGounded)
         {
+            animator.SetBool("up", false);
+            animator.SetBool("down", false);
+            animator.SetBool("right", false);
+        }
+
+        if(isGounded && Input.GetKeyDown(KeyCode.Space))
+        {
+            animator.SetBool("up", true);
             isJumpinig = true;
             jumpTimeCounter = jumpTime;
             jump(gravityMode);
@@ -101,6 +135,7 @@ public class PlayerContoller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
+            
             if (jumpTimeCounter > 0)
             {
                 jump(gravityMode);
@@ -108,18 +143,34 @@ public class PlayerContoller : MonoBehaviour
             }
             else
             {
+                animator.SetBool("up", false);
+                isDashJump();
                 isJumpinig = false;
             }
         }
 
         if(Input.GetKeyUp(KeyCode.Space))
         {
+            animator.SetBool("up", false);
+            isDashJump();
             isJumpinig = false;
         }
  
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
         rayGravity();
+    }
+
+    private void isDashJump()
+    {
+        if(Input.GetKey(KeyCode.LeftShift))
+        {
+            animator.SetBool("down", true);
+        }
+        else
+        {
+            animator.SetBool("right", true);
+        }
     }
 
     private bool checkedRay(float moveInput)
@@ -135,7 +186,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitLeftUp.collider.tag == "ground")
             {
-                return moveInput > 0;
+                return moveInput < 0;
             }
         }
 
@@ -143,7 +194,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if(hitLeftDown.collider.tag == "ground")
             {
-                return moveInput > 0;
+                return moveInput < 0;
             }
         }
 
@@ -158,7 +209,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitRightUp.collider.tag == "ground")
             {
-                return moveInput < 0;
+                return moveInput > 0;
             }
         }
 
@@ -166,7 +217,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if(hitRightDown.collider.tag == "ground")
             {
-                return moveInput < 0;
+                return moveInput > 0;
             }
         }
 

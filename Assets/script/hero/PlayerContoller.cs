@@ -62,7 +62,7 @@ public class PlayerContoller : MonoBehaviour
         float speedUp = 1;
         if (shiftInput && moveInput != 0)
         {
-            speedUp = 1.5f;
+            speedUp = 2f;
             animator.SetBool("dash", true);
         }else if (!shiftInput || moveInput == 0)
         {
@@ -147,7 +147,7 @@ public class PlayerContoller : MonoBehaviour
             else
             {
                 animator.SetBool("up", false);
-                isDashJump();
+                animator.SetBool("down", true);
                 isJumpinig = false;
             }
         }
@@ -155,25 +155,16 @@ public class PlayerContoller : MonoBehaviour
         if(Input.GetKeyUp(KeyCode.Space))
         {
             animator.SetBool("up", false);
-            isDashJump();
+            if (!isGounded)
+            {
+                animator.SetBool("down", true);
+            }
             isJumpinig = false;
         }
  
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
         rayGravity();
-    }
-
-    private void isDashJump()
-    {
-        if(Input.GetKey(KeyCode.LeftShift))
-        {
-            animator.SetBool("down", true);
-        }
-        else
-        {
-            animator.SetBool("right", true);
-        }
     }
 
     private bool checkedRay(float moveInput)

@@ -31,9 +31,10 @@ public class PlayerContoller : MonoBehaviour
     private Transform gravityRightDown;
 
     private Animator animator;
-
-
     
+    private bool isStopMoveDamage = false;
+
+    private bool dash = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -49,13 +50,19 @@ public class PlayerContoller : MonoBehaviour
 
     // Update is called once per frame
     void FixedUpdate()
-    {   bool checkeRay = checkedRay(moveInput);
-        if (!checkeRay)
+    {
+        moveInput = Input.GetAxisRaw("Horizontal");
+        bool checkeRay = checkedRay(moveInput);
+
+        if (isStopMoveDamage)
         {
             return;
         }
-        rayGravity();
-        moveInput = Input.GetAxisRaw("Horizontal");
+
+        if (checkeRay)
+        {
+            return;
+        }
 
         bool shiftInput = Input.GetKey(KeyCode.LeftShift);
 
@@ -64,9 +71,11 @@ public class PlayerContoller : MonoBehaviour
         {
             speedUp = 2f;
             animator.SetBool("dash", true);
+            dash = true;
         }else if (!shiftInput || moveInput == 0)
         {
             animator.SetBool("dash", false);
+            dash = false;
         }
 
         if (!isGounded && !shiftInput)
@@ -101,24 +110,20 @@ public class PlayerContoller : MonoBehaviour
                 movementNomal = Vector2.zero;
             }
         }
-
-        if (gravityMode == "up")
-        {
-            rb.velocity = new Vector2(moveInput * -speed * speedUp - movementNomal.x, rb.velocity.y - movementNomal.y);
-        } else if (gravityMode == "down")
-        {
-            rb.velocity = new Vector2(moveInput * speed * speedUp - movementNomal.x, rb.velocity.y - movementNomal.y);
-        } else if (gravityMode == "right")
-        {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * speed * speedUp);
-        } else if (gravityMode == "left")
-        {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, moveInput * -speed * speedUp);
-        }
+        move(moveInput * speed * speedUp - movementNomal.x);
     }
 
     void Update()
     {
+        if (isStopMoveDamage)
+        {
+            //仮　TODOダーメジ関数を作成
+            Debug.Log("damage");
+            jump(gravityMode);
+            move(10);
+            return;
+        }
+        rayGravity();
         isGounded = Physics2D.OverlapCircle(feetPos.position, checkRadius, whatIsGournd);
 
         if (isGounded)
@@ -126,6 +131,10 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("up", false);
             animator.SetBool("down", false);
             animator.SetBool("right", false);
+        }
+        else
+        {
+            animator.SetBool("down", true);
         }
 
         if(isGounded && Input.GetKeyDown(KeyCode.Space))
@@ -169,6 +178,8 @@ public class PlayerContoller : MonoBehaviour
 
     private bool checkedRay(float moveInput)
     {
+        float scale = transform.localScale.x;
+        bool checks = false;
         Ray rayLeftUp = new Ray(gravityLeftUp.position, -gravityLeftUp.up);
         Debug.DrawRay(rayLeftUp.origin, rayLeftUp.direction, Color.red);
         RaycastHit2D hitLeftUp = Physics2D.Raycast(rayLeftUp.origin, rayLeftUp.direction, isStop);
@@ -180,7 +191,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitLeftUp.collider.tag == "ground")
             {
-                return moveInput < 0;
+                
             }
         }
 
@@ -188,7 +199,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if(hitLeftDown.collider.tag == "ground")
             {
-                return moveInput < 0;
+            
             }
         }
 
@@ -203,7 +214,13 @@ public class PlayerContoller : MonoBehaviour
         {
             if (hitRightUp.collider.tag == "ground")
             {
-                return moveInput > 0;
+                if(scale > 0)
+                {
+                    checks = 0 < moveInput;
+                }else if(scale < 0)
+                {
+                    checks = 0 > moveInput;
+                }
             }
         }
 
@@ -211,11 +228,18 @@ public class PlayerContoller : MonoBehaviour
         {
             if(hitRightDown.collider.tag == "ground")
             {
-                return moveInput > 0;
+                if (scale == 5)
+                {
+                    checks = 0 < moveInput;
+                }
+                else if (scale < 0)
+                {
+                    checks = 0 > moveInput;
+                }
             }
         }
 
-        return true;
+        return checks;
     }
 
     private Vector3 gravietyDirection(string mode)
@@ -268,14 +292,15 @@ public class PlayerContoller : MonoBehaviour
         RaycastHit2D[] hits = new RaycastHit2D[2];
         int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
-        if (h > 1)
+        if (h > 0)
         {
-            if (hits[1].collider.tag == "ground")
+            int index = 0;
+            if (hits[index].collider.tag == "ground")
             {
-                movementNomal = new Vector2(hits[1].normal.x, hits[1].normal.y);
+                movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
                 Quaternion q = Quaternion.FromToRotation(
                         transform.up,
-                        hits[1].normal);
+                        hits[index].normal);
                 transform.rotation *= q;
             }
         }
@@ -283,7 +308,6 @@ public class PlayerContoller : MonoBehaviour
 
     public void changeGravityMode(string mode)
     {
-        rayGravity();
         if (gravityMode != mode)
         {
             isJumpinig = false;
@@ -318,6 +342,47 @@ public class PlayerContoller : MonoBehaviour
             case "right":
                 transform.eulerAngles = new Vector3(0, 0, 90f);
                 break;
+        }
+    }
+
+    private void move(float speed)
+    {
+        if (gravityMode == "up")
+        {
+            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
+        }
+        else if (gravityMode == "down")
+        {
+            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
+        }
+        else if (gravityMode == "right")
+        {
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+        }
+        else if (gravityMode == "left")
+        {
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
+        }
+    }
+
+    IEnumerator OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "enemy")
+        {
+            if (dash)
+            {
+                Destroy(collision.gameObject);
+            }
+            else
+            {
+                animator.SetBool("damage", true);
+                isStopMoveDamage = true;
+                rb.mass = 2;
+                yield return new WaitForSeconds(0.5f);
+                animator.SetBool("damage", false);
+                rb.mass = 0.8f;
+                isStopMoveDamage = false;
+            }
         }
     }
 }

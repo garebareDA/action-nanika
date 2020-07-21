@@ -6,6 +6,7 @@ public class PlayerContoller : MonoBehaviour
 {
     private Rigidbody2D rb;
     public float speed;
+    private float speedTmp;
     public float jumpForce;
     private float moveInput;
     private Vector2 movementNomal = new Vector2(0, 0);
@@ -63,28 +64,14 @@ public class PlayerContoller : MonoBehaviour
         attackColider = transform.Find("attackColider").gameObject;
 
         target = transform.Find("target").gameObject;
+        speedTmp = speed;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
-        bool checkeRay = checkedRay(moveInput);
-
-
-        if(attackCounter > 0)
-        {
-            attackColider.SetActive(false);
-            isDash = false;
-            target.SetActive(false);
-            speedUp = 0.3f;
-            return;
-        }
-
-        if (isStopMoveDamage || checkeRay)
-        {   
-            return;
-        }
+        bool checkRay = checkedRay(moveInput);
 
         if (moveInput < 0)
         {
@@ -100,6 +87,28 @@ public class PlayerContoller : MonoBehaviour
         {
             animator.SetBool("walk", false);
         }
+
+        if (isStopMoveDamage || checkRay)
+        {
+            speedUp = 0;
+            speed = 0;
+            return;
+        }
+        else
+        {
+            speed = speedTmp;
+        }
+
+        if(attackCounter > 0)
+        {
+            attackColider.SetActive(false);
+            isDash = false;
+            target.SetActive(false);
+            speedUp = 0.3f;
+            return;
+        }
+
+
 
         RaycastHit2D hit = Physics2D.Raycast(gravityDown.position, -Vector2.up, 1f, 8);
         if (hit.collider != null && Mathf.Abs(hit.normal.x) > 0.1f)
@@ -216,8 +225,6 @@ public class PlayerContoller : MonoBehaviour
             }
             isJumpinig = false;
         }
-
-        rayGravity();
     }
 
     private bool checkedRay(float moveInput)
@@ -266,6 +273,8 @@ public class PlayerContoller : MonoBehaviour
                     checks = 0 > moveInput;
                 }
             }
+
+            return checks;
         }
 
         if(hitRightDown.collider != null)
@@ -281,6 +290,7 @@ public class PlayerContoller : MonoBehaviour
                     checks = 0 > moveInput;
                 }
             }
+            return checks;
         }
 
         return checks;

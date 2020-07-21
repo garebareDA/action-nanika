@@ -11,9 +11,9 @@ public class PlayerContoller : MonoBehaviour
     private Vector2 movementNomal = new Vector2(0, 0);
 
     private bool isGounded;
-    public Transform feetPos;
-    public float checkRadius;
     public LayerMask whatIsGournd;
+
+    [SerializeField] private ContactFilter2D filter2d;
 
     private float jumpTimeCounter;
     public float jumpTime;
@@ -35,11 +35,19 @@ public class PlayerContoller : MonoBehaviour
     private bool isStopMoveDamage = false;
 
     private bool dash = false;
+    private bool isDash = false;
 
     private GameObject attackColider;
 
     private float attackCounter;
     public float attackTime;
+    float speedUp = 1f;
+
+    private GameObject target;
+
+    private Vector2 warpVector;
+    private Vector2 warpVectorTmp;
+    public bool isAttack;
     // Start is called before the first frame update
     void Start()
     {
@@ -53,6 +61,8 @@ public class PlayerContoller : MonoBehaviour
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
 
         attackColider = transform.Find("attackColider").gameObject;
+
+        target = transform.Find("target").gameObject;
     }
 
     // Update is called once per frame
@@ -61,24 +71,19 @@ public class PlayerContoller : MonoBehaviour
         moveInput = Input.GetAxisRaw("Horizontal");
         bool checkeRay = checkedRay(moveInput);
 
-        if (isStopMoveDamage || attackCounter > 0 || checkeRay)
+
+        if(attackCounter > 0)
         {
             attackColider.SetActive(false);
+            isDash = false;
+            target.SetActive(false);
+            speedUp = 0.3f;
             return;
         }
 
-        bool shiftInput = Input.GetKey(KeyCode.LeftShift);
-
-        float speedUp = 1;
-        if (shiftInput && moveInput != 0)
-        {
-            speedUp = 2f;
-            animator.SetBool("dash", true);
-            dash = true;
-        }else if (!shiftInput || moveInput == 0)
-        {
-            animator.SetBool("dash", false);
-            dash = false;
+        if (isStopMoveDamage || checkeRay)
+        {   
+            return;
         }
 
         if (moveInput < 0)
@@ -108,7 +113,14 @@ public class PlayerContoller : MonoBehaviour
                 movementNomal = Vector2.zero;
             }
         }
-        move(moveInput * speed * speedUp - movementNomal.x);
+
+        if (gravityMode == "down" || gravityMode == "up")
+        {
+            move(moveInput * speed * speedUp - movementNomal.x);
+        }else if (gravityMode == "left" || gravityMode == "right")
+        {
+            move(moveInput * speed * speedUp - movementNomal.y);
+        }
     }
 
     void Update()
@@ -121,25 +133,52 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        rayGravity();
-        isGounded = Physics2D.OverlapCircle(feetPos.position, checkRadius, whatIsGournd);
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            isDash = true;
+        }
 
+        if (Input.GetKey(KeyCode.LeftShift) && moveInput != 0 && isDash)
+        {
+            speedUp = 2f;
+            animator.SetBool("dash", true);
+            dash = true;
+        }
+        else
+        {
+            speedUp = 1f;
+            animator.SetBool("dash", false);
+            dash = false;
+        }
+
+        rayGravity();
+        isGounded = rb.IsTouching(filter2d);
         if (isGounded)
         {
             attackColider.SetActive(false);
+            target.SetActive(false);
             animator.SetBool("up", false);
             animator.SetBool("down", false);
             animator.SetBool("right", false);
+            rb.mass = 0.5f;
         }
         else
         {
             attackColider.SetActive(true);
             animator.SetBool("down", true);
+            rb.mass = 2;
+            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
+            {
+                warpVectorTmp = warpVector;
+                attackColider.gameObject.SendMessage("attackDestoroy");
+                attackCounter = attackTime;
+                transform.position = warpVector;
+            }
         }
 
         if(attackCounter > 0)
         {
-            jump(gravityMode, 10);
+            jump(gravityMode, 20);
             attackCounter -= Time.deltaTime;
             return;
         }
@@ -414,13 +453,15 @@ public class PlayerContoller : MonoBehaviour
     {
         if (!isGounded)
         {
-            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0)
-            {
-                attackCounter = attackTime;
-                transform.position = warp;
-                attackColider.gameObject.SendMessage("attackDestoroy");
-            }
+            target.SetActive(true);
+            target.transform.position = warp;
+            warpVector = warp;
         }
+    }
+
+    public void isAttacks(bool i)
+    {
+        isAttack = i;
     }
 
     IEnumerator OnCollisionEnter2D(Collision2D collision)

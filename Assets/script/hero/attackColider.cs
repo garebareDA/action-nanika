@@ -7,12 +7,15 @@ public class attackColider : MonoBehaviour
 {
     GameObject player;
     Vector3 distance;
+
     GameObject destroy;
+    GameObject target;
     float target_distance = 1000;
     // Start is called before the first frame update
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player");
+        target = player.transform.Find("target").gameObject;
     }
 
     public void attackDestoroy()
@@ -25,7 +28,6 @@ public class attackColider : MonoBehaviour
     {
         if(collision.tag == "enemy")
         {
-            player = transform.parent.gameObject;
             float dis = Vector3.Distance(player.transform.position, collision.transform.position);
             if (target_distance > dis)
             {
@@ -33,7 +35,7 @@ public class attackColider : MonoBehaviour
                 distance = collision.transform.position;
                 destroy = collision.gameObject;
             }
-
+            player.SendMessage("isAttacks", true);
             player.SendMessage("attack", distance);
         }
     }
@@ -42,5 +44,7 @@ public class attackColider : MonoBehaviour
     {
         target_distance = 1000;
         distance = Vector3.zero;
+        target.SetActive(false);
+        player.SendMessage("isAttacks", false);
     }
 }

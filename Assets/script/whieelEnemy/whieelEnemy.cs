@@ -11,6 +11,7 @@ public class whieelEnemy : MonoBehaviour
     private Transform gravityDown;
     private Animator animator;
     private Vector2 movementNomal = new Vector2(0, 0);
+    private Transform dashRaycast;
 
     private float speedUp;
     public float moveInput;
@@ -21,18 +22,24 @@ public class whieelEnemy : MonoBehaviour
         animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform;
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
+        dashRaycast = gravityTrandform.Find("dashRay").gameObject.transform;
         speedUp = 1f;
+        dashRays();
+        rayGravity();
     }
 
     // Update is called once per frame
     void Update()
-    {
+    {   dashRays();
+        rayGravity();
         if (gravityMode == "down" || gravityMode == "up")
         {
+            animator.SetBool("walk", true);
             move(moveInput * speed * speedUp - movementNomal.x);
         }
         else if (gravityMode == "left" || gravityMode == "right")
         {
+            animator.SetBool("walk", true);
             move(moveInput * speed * speedUp - movementNomal.y);
         }
     }
@@ -63,6 +70,7 @@ public class whieelEnemy : MonoBehaviour
         RaycastHit2D[] hits = new RaycastHit2D[2];
         int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
+
         if (h > 0)
         {
             int index = 0;
@@ -74,6 +82,31 @@ public class whieelEnemy : MonoBehaviour
                         hits[index].normal);
                 transform.rotation *= q;
             }
+        }
+    }
+
+    private void dashRays()
+    {
+        Ray ray = new Ray(dashRaycast.position, -dashRaycast.up);
+        RaycastHit2D hitray = Physics2D.Raycast(ray.origin, ray.direction, 10f);
+        Debug.DrawRay(ray.origin, ray.direction, Color.red);
+        if (hitray.collider != null)
+        {
+            if (hitray.collider.tag == "Player")
+            {
+                speedUp = 3;
+                animator.SetBool("dash", true);
+            }
+            else
+            {
+                speedUp = 1;
+                animator.SetBool("dash", false);
+            }
+        }
+        else
+        {
+            speedUp = 1;
+            animator.SetBool("dash", false);
         }
     }
 }

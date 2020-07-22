@@ -6,7 +6,6 @@ public class PlayerContoller : MonoBehaviour
 {
     private Rigidbody2D rb;
     public float speed;
-    private float speedTmp;
     public float jumpForce;
     private float moveInput;
     private Vector2 movementNomal = new Vector2(0, 0);
@@ -64,14 +63,27 @@ public class PlayerContoller : MonoBehaviour
         attackColider = transform.Find("attackColider").gameObject;
 
         target = transform.Find("target").gameObject;
-        speedTmp = speed;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
-        bool checkRay = checkedRay(moveInput);
+        bool checkeRay = checkedRay(moveInput);
+
+        if(attackCounter > 0)
+        {
+            attackColider.SetActive(false);
+            isDash = false;
+            target.SetActive(false);
+            speedUp = 0.3f;
+            return;
+        }
+
+        if (isStopMoveDamage || checkeRay)
+        {   
+            return;
+        }
 
         if (moveInput < 0)
         {
@@ -87,28 +99,6 @@ public class PlayerContoller : MonoBehaviour
         {
             animator.SetBool("walk", false);
         }
-
-        if (isStopMoveDamage || checkRay)
-        {
-            speedUp = 0;
-            speed = 0;
-            return;
-        }
-        else
-        {
-            speed = speedTmp;
-        }
-
-        if(attackCounter > 0)
-        {
-            attackColider.SetActive(false);
-            isDash = false;
-            target.SetActive(false);
-            speedUp = 0.3f;
-            return;
-        }
-
-
 
         RaycastHit2D hit = Physics2D.Raycast(gravityDown.position, -Vector2.up, 1f, 8);
         if (hit.collider != null && Mathf.Abs(hit.normal.x) > 0.1f)
@@ -142,7 +132,8 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        bool checkeRay = checkedRay(moveInput);
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !checkeRay)
         {
             isDash = true;
         }
@@ -161,7 +152,7 @@ public class PlayerContoller : MonoBehaviour
         }
 
         rayGravity();
-        isGounded = rb.IsTouching(filter2d);
+        isGounded = downCheck();
         if (isGounded)
         {
             attackColider.SetActive(false);
@@ -175,9 +166,9 @@ public class PlayerContoller : MonoBehaviour
         {
             attackColider.SetActive(true);
             animator.SetBool("down", true);
-            rb.mass = 2;
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
             {
+                rb.mass = 2;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
@@ -194,6 +185,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(isGounded && Input.GetKeyDown(KeyCode.Space))
         {
+            rb.mass = 2;
             animator.SetBool("up", true);
             isJumpinig = true;
             jumpTimeCounter = jumpTime;
@@ -202,7 +194,7 @@ public class PlayerContoller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
-            
+            rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
                 jump(gravityMode, jumpForce);
@@ -218,6 +210,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(Input.GetKeyUp(KeyCode.Space))
         {
+            rb.mass = 2;
             animator.SetBool("up", false);
             if (!isGounded)
             {
@@ -225,6 +218,8 @@ public class PlayerContoller : MonoBehaviour
             }
             isJumpinig = false;
         }
+
+        rayGravity();
     }
 
     private bool checkedRay(float moveInput)
@@ -273,8 +268,6 @@ public class PlayerContoller : MonoBehaviour
                     checks = 0 > moveInput;
                 }
             }
-
-            return checks;
         }
 
         if(hitRightDown.collider != null)
@@ -290,7 +283,6 @@ public class PlayerContoller : MonoBehaviour
                     checks = 0 > moveInput;
                 }
             }
-            return checks;
         }
 
         return checks;
@@ -349,6 +341,7 @@ public class PlayerContoller : MonoBehaviour
         if (h > 0)
         {
             int index = 0;
+            Debug.Log(hits[index].collider.tag);
             if (hits[index].collider.tag == "ground")
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
@@ -358,6 +351,18 @@ public class PlayerContoller : MonoBehaviour
                 transform.rotation *= q;
             }
         }
+    }
+
+    private bool downCheck()
+    {
+        Ray ray = new Ray(gravityDown.position, -gravityDown.up);
+        RaycastHit2D hitDown = Physics2D.Raycast(ray.origin, ray.direction, isStop);
+        if (hitDown.collider != null)
+        {
+            return hitDown.collider.tag == "ground";
+        }
+
+        return false;
     }
 
     public void changeGravityMode(string mode)

@@ -171,7 +171,7 @@ public class PlayerContoller : MonoBehaviour
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
-                transform.position = warpVector;
+                transform.position = warpVector + new Vector2(0, 1);
             }
         }
 

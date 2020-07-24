@@ -6,6 +6,7 @@ public class whieelEnemy : MonoBehaviour
 {
     private Rigidbody2D rb;
     public float speed;
+    private float speedTmp;
     public float gravity;
     public string gravityMode;
     private Transform gravityDown;
@@ -15,6 +16,13 @@ public class whieelEnemy : MonoBehaviour
 
     private float speedUp;
     public float moveInput;
+
+    private Vector2 firstPosition;
+
+    private bool reset = false;
+
+    private SpriteRenderer myRender;
+    private float counter;
     // Start is called before the first frame update
     void Start()
     {
@@ -23,43 +31,87 @@ public class whieelEnemy : MonoBehaviour
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform;
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
         dashRaycast = gravityTrandform.Find("dashRay").gameObject.transform;
+        firstPosition = transform.position;
         speedUp = 1f;
         dashRays();
         rayGravity();
         animator.SetBool("walk", true);
+        speedTmp = speed;
+        myRender = gameObject.GetComponent<SpriteRenderer>();
+        counter = 0;
     }
 
     // Update is called once per frame
     void Update()
     {   dashRays();
         rayGravity();
-        if (gravityMode == "down" || gravityMode == "up")
+
+        if(counter > 0)
         {
-            move(moveInput * speed * speedUp - movementNomal.x);
+            counter -= Time.deltaTime;
         }
-        else if (gravityMode == "left" || gravityMode == "right")
+        Debug.Log(speedTmp);
+        if (!reset)
         {
-            move(moveInput * speed * speedUp - movementNomal.y);
+            
+            Vector3 gravityVector = gravietyDirection(gravityMode);
+             rb.AddForce(gravityVector);
+
+            if (gravityMode == "down" || gravityMode == "up")
+            {
+                move(moveInput * speed * speedUp - movementNomal.x);
+            }
+            else if (gravityMode == "left" || gravityMode == "right")
+            {
+                move(moveInput * speed * speedUp - movementNomal.y);
+            }
         }
+        else
+        {
+            transform.position = firstPosition;
+        }
+
     }
 
     private void move(float speed)
     {
         if (gravityMode == "up")
         {
-            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(-speed, rb.velocity.y);
         }
         else if (gravityMode == "down")
         {
-            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(speed, rb.velocity.y);
         }
         else if (gravityMode == "right")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+            rb.velocity = new Vector2(rb.velocity.x, -speed);
         }
         else if (gravityMode == "left")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
+            rb.velocity = new Vector2(rb.velocity.x, speed);
+        }
+    }
+
+    private Vector3 gravietyDirection(string mode)
+    {
+        switch (mode)
+        {
+            case "up":
+                Vector3 gravityVectorUp = new Vector3(0, -gravity, 0);
+                return gravityVectorUp;
+
+            case "left":
+                Vector3 gravityVectorLeft = new Vector3(gravity, 0, 0);
+                return gravityVectorLeft;
+
+            case "right":
+                Vector3 gravityVectorRight = new Vector3(-gravity, 0, 0);
+                return gravityVectorRight;
+
+            default:
+                Vector3 gravityVectorDown = new Vector3(0, gravity, 0);
+                return gravityVectorDown;
         }
     }
 
@@ -107,5 +159,27 @@ public class whieelEnemy : MonoBehaviour
             speedUp = 1;
             animator.SetBool("dash", false);
         }
+    }
+
+    void OnBecameVisible()
+    {
+        if (counter <= 0)
+        {
+            myRender.color = new Color(myRender.color.r, myRender.color.g, myRender.color.b, 100);
+            gameObject.GetComponent<Collider2D>().enabled = true;
+            reset = false;    
+        }
+        speed = speedTmp;
+    }
+
+    private void OnBecameInvisible()
+    {
+        transform.position = firstPosition;
+        myRender.color = new Color(myRender.color.r, myRender.color.g, myRender.color.b, 0) ;
+        gameObject.GetComponent<Collider2D>().enabled = false;
+        reset = true;
+        speedTmp = speed;
+        speed = 0;
+        counter = 0.1f;
     }
 }

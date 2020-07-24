@@ -11,6 +11,7 @@ public class attackColider : MonoBehaviour
     GameObject destroy;
     GameObject target;
     float target_distance = 1000;
+
     // Start is called before the first frame update
     void Start()
     {

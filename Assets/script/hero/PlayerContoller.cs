@@ -168,7 +168,6 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", true);
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
             {
-                rb.mass = 2;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
@@ -341,7 +340,6 @@ public class PlayerContoller : MonoBehaviour
         if (h > 0)
         {
             int index = 0;
-            Debug.Log(hits[index].collider.tag);
             if (hits[index].collider.tag == "ground")
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);

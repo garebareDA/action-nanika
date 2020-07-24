@@ -26,6 +26,7 @@ public class whieelEnemy : MonoBehaviour
         speedUp = 1f;
         dashRays();
         rayGravity();
+        animator.SetBool("walk", true);
     }
 
     // Update is called once per frame
@@ -34,12 +35,10 @@ public class whieelEnemy : MonoBehaviour
         rayGravity();
         if (gravityMode == "down" || gravityMode == "up")
         {
-            animator.SetBool("walk", true);
             move(moveInput * speed * speedUp - movementNomal.x);
         }
         else if (gravityMode == "left" || gravityMode == "right")
         {
-            animator.SetBool("walk", true);
             move(moveInput * speed * speedUp - movementNomal.y);
         }
     }

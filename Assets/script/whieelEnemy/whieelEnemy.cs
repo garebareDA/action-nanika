@@ -50,7 +50,7 @@ public class whieelEnemy : MonoBehaviour
         {
             counter -= Time.deltaTime;
         }
-        Debug.Log(speedTmp);
+
         if (!reset)
         {
             

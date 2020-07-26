@@ -8,6 +8,13 @@ public class jetEnemyRed : MonoBehaviour
     private bool reset = false;
     private SpriteRenderer myRender;
     private float counter;
+    private float currentTime;
+    private float targetTime = 2f;
+    public float speed;
+
+    public GameObject tama;
+    private Vector3 targetPosition;
+    private Vector3 gunPosition;
 
     // Start is called before the first frame update
     void Start()
@@ -20,14 +27,15 @@ public class jetEnemyRed : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        gunPosition = transform.Find("gun").transform.position;
+        targetPosition = transform.Find("target").transform.position;
         if (counter > 0)
         {
             counter -= Time.deltaTime;
         }
-
+        currentTime += Time.deltaTime;
         if (!reset)
         {
-
         }
         else
         {
@@ -53,5 +61,17 @@ public class jetEnemyRed : MonoBehaviour
         gameObject.GetComponent<Collider2D>().enabled = false;
         reset = true;
         counter = 0.1f;
+    }
+
+    public void fire(){
+        if (targetTime < currentTime && !reset)
+        {
+            currentTime = 0;
+            GameObject t = Instantiate(tama) as GameObject;
+            t.transform.parent = transform;
+            t.transform.position = gunPosition;
+            Vector2 vec = targetPosition - gunPosition;
+            t.GetComponent<Rigidbody2D>().velocity = vec * speed;
+        }
     }
 }

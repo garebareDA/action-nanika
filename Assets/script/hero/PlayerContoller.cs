@@ -48,6 +48,8 @@ public class PlayerContoller : MonoBehaviour
     private Vector2 warpVector;
     private Vector2 warpVectorTmp;
     public bool isAttack;
+
+    Vector3 warp;
     // Start is called before the first frame update
     void Start()
     {
@@ -479,9 +481,9 @@ public class PlayerContoller : MonoBehaviour
 
     IEnumerator OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "enemy")
+        if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
         {
-            if (dash)
+            if (dash && collision.gameObject.tag == "enemy")
             {
                 Destroy(collision.gameObject);
             }

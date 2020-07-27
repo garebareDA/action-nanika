@@ -50,6 +50,10 @@ public class PlayerContoller : MonoBehaviour
     public bool isAttack;
 
     Vector3 warp;
+
+    private bool stop;
+
+    private float damageCountor = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -82,7 +86,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (isStopMoveDamage || checkeRay)
+        if (isStopMoveDamage || checkeRay || stop)
         {   
             return;
         }
@@ -128,7 +132,17 @@ public class PlayerContoller : MonoBehaviour
     {
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
-        if (isStopMoveDamage)
+
+        if (0 <= damageCountor)
+        {
+            damageCountor = damageCountor - Time.deltaTime;
+        }
+        else if(isStopMoveDamage)
+        {
+            rb.mass = 0.5f;
+        }
+
+        if (isStopMoveDamage && damageCountor > 0)
         {
             damage(15);
             return;
@@ -163,6 +177,11 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", false);
             animator.SetBool("right", false);
             rb.mass = 0.5f;
+            if (isStopMoveDamage)
+            {
+                animator.SetBool("damage", false);
+                isStopMoveDamage = false;
+            }
         }
         else
         {
@@ -479,7 +498,12 @@ public class PlayerContoller : MonoBehaviour
         isAttack = i;
     }
 
-    IEnumerator OnCollisionEnter2D(Collision2D collision)
+    public void isMoveStop(bool stops)
+    {
+        stop = stops;
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
         {
@@ -492,10 +516,7 @@ public class PlayerContoller : MonoBehaviour
                 animator.SetBool("damage", true);
                 isStopMoveDamage = true;
                 rb.mass = 3;
-                yield return new WaitForSeconds(0.3f);
-                animator.SetBool("damage", false);
-                rb.mass = 0.8f;
-                isStopMoveDamage = false;
+                damageCountor = 0.4f;
             }
         }
     }

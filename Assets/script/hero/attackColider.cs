@@ -6,11 +6,12 @@ using UnityEngine;
 public class attackColider : MonoBehaviour
 {
     GameObject player;
-    Vector3 distance;
+    Transform distance;
 
     GameObject destroy;
     GameObject target;
     float target_distance = 1000;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -32,18 +33,17 @@ public class attackColider : MonoBehaviour
             if (target_distance > dis)
             {
                 target_distance = dis;
-                distance = collision.transform.position;
+                distance = collision.transform;
                 destroy = collision.gameObject;
             }
             player.SendMessage("isAttacks", true);
-            player.SendMessage("attack", distance);
+            player.SendMessage("attack", distance.position);
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
         target_distance = 1000;
-        distance = Vector3.zero;
         target.SetActive(false);
         player.SendMessage("isAttacks", false);
     }

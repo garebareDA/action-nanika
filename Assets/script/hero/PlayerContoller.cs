@@ -25,10 +25,9 @@ public class PlayerContoller : MonoBehaviour
     public float isStop;
 
     private Transform gravityDown;
-    private Transform gravityLeftUp;
-    private Transform gravityLeftDown;
     private Transform gravityRightUp;
     private Transform gravityRightDown;
+    private Transform gravityJump;
 
     private Animator animator;
     
@@ -48,6 +47,12 @@ public class PlayerContoller : MonoBehaviour
     private Vector2 warpVector;
     private Vector2 warpVectorTmp;
     public bool isAttack;
+
+    Vector3 warp;
+
+    private bool stop;
+
+    private float damageCountor = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -55,10 +60,9 @@ public class PlayerContoller : MonoBehaviour
         animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
-        gravityLeftUp = gravityTrandform.Find("gravityLeftUp").gameObject.transform;
-        gravityLeftDown = gravityTrandform.Find("gravityLeftDown").gameObject.transform;
         gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
+        gravityJump = gravityTrandform.Find("isGrounded").gameObject.transform;
 
         attackColider = transform.Find("attackColider").gameObject;
 
@@ -71,7 +75,6 @@ public class PlayerContoller : MonoBehaviour
         moveInput = Input.GetAxisRaw("Horizontal");
         bool checkeRay = checkedRay(moveInput);
 
-
         if(attackCounter > 0)
         {
             attackColider.SetActive(false);
@@ -81,7 +84,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (isStopMoveDamage || checkeRay)
+        if (isStopMoveDamage || checkeRay || stop)
         {   
             return;
         }
@@ -125,15 +128,27 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
+        rayGravity();
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
-        if (isStopMoveDamage)
+
+        if (0 <= damageCountor)
+        {
+            damageCountor = damageCountor - Time.deltaTime;
+        }
+        else if(isStopMoveDamage)
+        {
+            rb.mass = 0.5f;
+        }
+
+        if (isStopMoveDamage && damageCountor > 0)
         {
             damage(15);
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        bool checkeRay = checkedRay(moveInput);
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !checkeRay)
         {
             isDash = true;
         }
@@ -151,8 +166,7 @@ public class PlayerContoller : MonoBehaviour
             dash = false;
         }
 
-        rayGravity();
-        isGounded = rb.IsTouching(filter2d);
+        isGounded = downCheck();
         if (isGounded)
         {
             attackColider.SetActive(false);
@@ -161,18 +175,22 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", false);
             animator.SetBool("right", false);
             rb.mass = 0.5f;
+            if (isStopMoveDamage)
+            {
+                animator.SetBool("damage", false);
+                isStopMoveDamage = false;
+            }
         }
         else
         {
             attackColider.SetActive(true);
             animator.SetBool("down", true);
-            rb.mass = 2;
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
             {
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
-                transform.position = warpVector;
+                transform.position = warpVector + new Vector2(0, 1);
             }
         }
 
@@ -185,6 +203,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(isGounded && Input.GetKeyDown(KeyCode.Space))
         {
+            rb.mass = 2;
             animator.SetBool("up", true);
             isJumpinig = true;
             jumpTimeCounter = jumpTime;
@@ -193,7 +212,7 @@ public class PlayerContoller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
-            
+            rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
                 jump(gravityMode, jumpForce);
@@ -209,6 +228,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(Input.GetKeyUp(KeyCode.Space))
         {
+            rb.mass = 2;
             animator.SetBool("up", false);
             if (!isGounded)
             {
@@ -216,36 +236,12 @@ public class PlayerContoller : MonoBehaviour
             }
             isJumpinig = false;
         }
-
-        rayGravity();
     }
 
     private bool checkedRay(float moveInput)
     {
         float scale = transform.localScale.x;
         bool checks = false;
-        Ray rayLeftUp = new Ray(gravityLeftUp.position, -gravityLeftUp.up);
-        Debug.DrawRay(rayLeftUp.origin, rayLeftUp.direction, Color.red);
-        RaycastHit2D hitLeftUp = Physics2D.Raycast(rayLeftUp.origin, rayLeftUp.direction, isStop);
-
-        Ray rayLeftDown = new Ray(gravityLeftDown.position, -gravityLeftUp.up);
-        Debug.DrawRay(rayLeftDown.origin, rayLeftDown.direction, Color.red);
-        RaycastHit2D hitLeftDown = Physics2D.Raycast(rayLeftDown.origin, rayLeftDown.direction, isStop);
-        if (hitLeftUp.collider != null)
-        {
-            if (hitLeftUp.collider.tag == "ground")
-            {
-                
-            }
-        }
-
-        if(hitLeftDown.collider != null)
-        {
-            if(hitLeftDown.collider.tag == "ground")
-            {
-            
-            }
-        }
 
         Ray rayRightUp = new Ray(gravityRightUp.position, -gravityRightUp.up);
         Debug.DrawRay(rayRightUp.origin, rayRightUp.direction, Color.red);
@@ -336,9 +332,9 @@ public class PlayerContoller : MonoBehaviour
         RaycastHit2D[] hits = new RaycastHit2D[2];
         int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
-        if (h > 0)
+        if (h > 1)
         {
-            int index = 0;
+            int index = 1;
             if (hits[index].collider.tag == "ground")
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
@@ -348,6 +344,17 @@ public class PlayerContoller : MonoBehaviour
                 transform.rotation *= q;
             }
         }
+    }
+
+    private bool downCheck()
+    {
+        Ray ray = new Ray(gravityJump.position, -gravityJump.up);
+        RaycastHit2D hitDown = Physics2D.Raycast(ray.origin, ray.direction, isStop);
+        if (hitDown.collider != null)
+        {
+            return hitDown.collider.tag == "ground";
+        }
+        return false;
     }
 
     public void changeGravityMode(string mode)
@@ -433,7 +440,7 @@ public class PlayerContoller : MonoBehaviour
     {
         if (gravityMode == "up")
         {
-            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
         }
         else if (gravityMode == "down")
         {
@@ -441,11 +448,11 @@ public class PlayerContoller : MonoBehaviour
         }
         else if (gravityMode == "right")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
         }
         else if (gravityMode == "left")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
         }
     }
 
@@ -464,11 +471,16 @@ public class PlayerContoller : MonoBehaviour
         isAttack = i;
     }
 
-    IEnumerator OnCollisionEnter2D(Collision2D collision)
+    public void isMoveStop(bool stops)
     {
-        if(collision.gameObject.tag == "enemy")
+        stop = stops;
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
         {
-            if (dash)
+            if (dash && collision.gameObject.tag == "enemy")
             {
                 Destroy(collision.gameObject);
             }
@@ -477,10 +489,7 @@ public class PlayerContoller : MonoBehaviour
                 animator.SetBool("damage", true);
                 isStopMoveDamage = true;
                 rb.mass = 3;
-                yield return new WaitForSeconds(0.3f);
-                animator.SetBool("damage", false);
-                rb.mass = 0.8f;
-                isStopMoveDamage = false;
+                damageCountor = 0.4f;
             }
         }
     }

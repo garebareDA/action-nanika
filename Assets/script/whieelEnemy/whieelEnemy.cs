@@ -53,17 +53,19 @@ public class whieelEnemy : MonoBehaviour
 
         if (!reset)
         {
-            
             Vector3 gravityVector = gravietyDirection(gravityMode);
              rb.AddForce(gravityVector);
 
-            if (gravityMode == "down" || gravityMode == "up")
+            if(moveInput != 0)
             {
-                move(moveInput * speed * speedUp - movementNomal.x);
-            }
-            else if (gravityMode == "left" || gravityMode == "right")
-            {
-                move(moveInput * speed * speedUp - movementNomal.y);
+                if (gravityMode == "down" || gravityMode == "up")
+                {
+                    move(moveInput * speed * speedUp - movementNomal.x);
+                }
+                else if (gravityMode == "left" || gravityMode == "right")
+                {
+                    move(moveInput * speed * speedUp - movementNomal.y);
+                }
             }
         }
         else

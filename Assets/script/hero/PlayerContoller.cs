@@ -25,10 +25,9 @@ public class PlayerContoller : MonoBehaviour
     public float isStop;
 
     private Transform gravityDown;
-    private Transform gravityLeftUp;
-    private Transform gravityLeftDown;
     private Transform gravityRightUp;
     private Transform gravityRightDown;
+    private Transform gravityJump;
 
     private Animator animator;
     
@@ -61,10 +60,9 @@ public class PlayerContoller : MonoBehaviour
         animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
-        gravityLeftUp = gravityTrandform.Find("gravityLeftUp").gameObject.transform;
-        gravityLeftDown = gravityTrandform.Find("gravityLeftDown").gameObject.transform;
         gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
+        gravityJump = gravityTrandform.Find("isGrounded").gameObject.transform;
 
         attackColider = transform.Find("attackColider").gameObject;
 
@@ -130,6 +128,7 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
+        rayGravity();
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
 
@@ -167,7 +166,6 @@ public class PlayerContoller : MonoBehaviour
             dash = false;
         }
 
-        rayGravity();
         isGounded = downCheck();
         if (isGounded)
         {
@@ -238,36 +236,12 @@ public class PlayerContoller : MonoBehaviour
             }
             isJumpinig = false;
         }
-
-        rayGravity();
     }
 
     private bool checkedRay(float moveInput)
     {
         float scale = transform.localScale.x;
         bool checks = false;
-        Ray rayLeftUp = new Ray(gravityLeftUp.position, -gravityLeftUp.up);
-        Debug.DrawRay(rayLeftUp.origin, rayLeftUp.direction, Color.red);
-        RaycastHit2D hitLeftUp = Physics2D.Raycast(rayLeftUp.origin, rayLeftUp.direction, isStop);
-
-        Ray rayLeftDown = new Ray(gravityLeftDown.position, -gravityLeftUp.up);
-        Debug.DrawRay(rayLeftDown.origin, rayLeftDown.direction, Color.red);
-        RaycastHit2D hitLeftDown = Physics2D.Raycast(rayLeftDown.origin, rayLeftDown.direction, isStop);
-        if (hitLeftUp.collider != null)
-        {
-            if (hitLeftUp.collider.tag == "ground")
-            {
-                
-            }
-        }
-
-        if(hitLeftDown.collider != null)
-        {
-            if(hitLeftDown.collider.tag == "ground")
-            {
-            
-            }
-        }
 
         Ray rayRightUp = new Ray(gravityRightUp.position, -gravityRightUp.up);
         Debug.DrawRay(rayRightUp.origin, rayRightUp.direction, Color.red);
@@ -358,9 +332,9 @@ public class PlayerContoller : MonoBehaviour
         RaycastHit2D[] hits = new RaycastHit2D[2];
         int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
-        if (h > 0)
+        if (h > 1)
         {
-            int index = 0;
+            int index = 1;
             if (hits[index].collider.tag == "ground")
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
@@ -374,13 +348,12 @@ public class PlayerContoller : MonoBehaviour
 
     private bool downCheck()
     {
-        Ray ray = new Ray(gravityDown.position, -gravityDown.up);
+        Ray ray = new Ray(gravityJump.position, -gravityJump.up);
         RaycastHit2D hitDown = Physics2D.Raycast(ray.origin, ray.direction, isStop);
         if (hitDown.collider != null)
         {
             return hitDown.collider.tag == "ground";
         }
-
         return false;
     }
 
@@ -467,7 +440,7 @@ public class PlayerContoller : MonoBehaviour
     {
         if (gravityMode == "up")
         {
-            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
         }
         else if (gravityMode == "down")
         {
@@ -475,11 +448,11 @@ public class PlayerContoller : MonoBehaviour
         }
         else if (gravityMode == "right")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
         }
         else if (gravityMode == "left")
         {
-            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, speed);
+            rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
         }
     }
 

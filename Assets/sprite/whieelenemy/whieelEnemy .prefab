@@ -258,6 +258,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 2
-  gravity: 100
+  gravity: -100
   gravityMode: down
   moveInput: -1

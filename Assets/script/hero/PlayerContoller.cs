@@ -53,6 +53,12 @@ public class PlayerContoller : MonoBehaviour
     private bool stop;
 
     private float damageCountor = 0;
+
+    private GameObject particleSmork;
+
+    public GameObject boom;
+
+    public GameObject dashEffect;
     // Start is called before the first frame update
     void Start()
     {
@@ -67,6 +73,8 @@ public class PlayerContoller : MonoBehaviour
         attackColider = transform.Find("attackColider").gameObject;
 
         target = transform.Find("target").gameObject;
+        particleSmork = transform.Find("Particle System").gameObject;
+        dashEffect = transform.Find("dashEffect").gameObject;
     }
 
     // Update is called once per frame
@@ -101,6 +109,7 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            dashEffect.SetActive(false);
             animator.SetBool("walk", false);
         }
 
@@ -158,12 +167,14 @@ public class PlayerContoller : MonoBehaviour
             speedUp = 2f;
             animator.SetBool("dash", true);
             dash = true;
+            dashEffect.SetActive(true);
         }
         else
         {
             speedUp = 1f;
             animator.SetBool("dash", false);
             dash = false;
+            dashEffect.SetActive(false);
         }
 
         isGounded = downCheck();
@@ -174,6 +185,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("up", false);
             animator.SetBool("down", false);
             animator.SetBool("right", false);
+            particleSmork.SetActive(true);
             rb.mass = 0.5f;
             if (isStopMoveDamage)
             {
@@ -183,9 +195,11 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            rb.mass = 0.5f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
-            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
+            particleSmork.SetActive(false);
+            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
@@ -197,6 +211,7 @@ public class PlayerContoller : MonoBehaviour
         if(attackCounter > 0)
         {
             jump(gravityMode, 20);
+            dashEffect.SetActive(false);
             attackCounter -= Time.deltaTime;
             return;
         }
@@ -440,7 +455,7 @@ public class PlayerContoller : MonoBehaviour
     {
         if (gravityMode == "up")
         {
-            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
         }
         else if (gravityMode == "down")
         {
@@ -482,6 +497,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if (dash && collision.gameObject.tag == "enemy")
             {
+                Instantiate(boom, collision.transform.position, collision.transform.rotation);
                 Destroy(collision.gameObject);
             }
             else

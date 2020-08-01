@@ -4911,7 +4911,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 5.076589, y: 0.13029194}
+  m_Offset: {x: 10.91795, y: 0.13029194}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -4922,7 +4922,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 13.825366, y: 18.31122}
+  m_Size: {x: 25.508087, y: 18.31122}
   m_EdgeRadius: 0
 --- !u!114 &8183524148827428964
 MonoBehaviour:
@@ -5187,6 +5187,7 @@ MonoBehaviour:
   attackTime: 0.3
   isAttack: 0
   boom: {fileID: 3724226967728016448, guid: 197747eec8cbab540a313a124e896c0b, type: 3}
+  dashEffect: {fileID: 0}
 --- !u!1 &8183524147585114792
 GameObject:
   m_ObjectHideFlags: 0

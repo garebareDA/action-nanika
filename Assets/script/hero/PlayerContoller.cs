@@ -59,6 +59,8 @@ public class PlayerContoller : MonoBehaviour
     public GameObject boom;
 
     public GameObject dashEffect;
+
+    private Transform particle;
     // Start is called before the first frame update
     void Start()
     {
@@ -75,6 +77,7 @@ public class PlayerContoller : MonoBehaviour
         target = transform.Find("target").gameObject;
         particleSmork = transform.Find("Particle System").gameObject;
         dashEffect = transform.Find("dashEffect").gameObject;
+        particle = Camera.main.transform.Find("Concentration");
     }
 
     // Update is called once per frame
@@ -168,6 +171,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", true);
             dash = true;
             dashEffect.SetActive(true);
+            particle.gameObject.SetActive(true);
         }
         else
         {
@@ -175,6 +179,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", false);
             dash = false;
             dashEffect.SetActive(false);
+            particle.gameObject.SetActive(false);
         }
 
         isGounded = downCheck();

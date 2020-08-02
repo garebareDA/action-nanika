@@ -23,6 +23,7 @@ public class PlayerContoller : MonoBehaviour
     public string gravityMode;
 
     public float isStop;
+    private bool jumpStop;
 
     private Transform gravityDown;
     private Transform gravityRightUp;
@@ -84,7 +85,6 @@ public class PlayerContoller : MonoBehaviour
     void FixedUpdate()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
-        bool checkeRay = checkedRay(moveInput);
 
         if(attackCounter > 0)
         {
@@ -95,7 +95,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (isStopMoveDamage || checkeRay || stop)
+        if (isStopMoveDamage || stop || jumpStop)
         {   
             return;
         }
@@ -159,8 +159,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        bool checkeRay = checkedRay(moveInput);
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !checkeRay)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !stop)
         {
             isDash = true;
         }
@@ -258,50 +257,6 @@ public class PlayerContoller : MonoBehaviour
         }
     }
 
-    private bool checkedRay(float moveInput)
-    {
-        float scale = transform.localScale.x;
-        bool checks = false;
-
-        Ray rayRightUp = new Ray(gravityRightUp.position, -gravityRightUp.up);
-        Debug.DrawRay(rayRightUp.origin, rayRightUp.direction, Color.red);
-        RaycastHit2D hitRightUp = Physics2D.Raycast(rayRightUp.origin, rayRightUp.direction, isStop);
-
-        Ray rayRightDown = new Ray(gravityRightDown.position, -gravityRightDown.up);
-        Debug.DrawRay(rayRightDown.origin, rayRightDown.direction, Color.red);
-        RaycastHit2D hitRightDown = Physics2D.Raycast(rayRightDown.origin, rayRightDown.direction, isStop);
-        if (hitRightUp.collider != null)
-        {
-            if (hitRightUp.collider.tag == "ground")
-            {
-                if(scale > 0)
-                {
-                    checks = 0 < moveInput;
-                }else if(scale < 0)
-                {
-                    checks = 0 > moveInput;
-                }
-            }
-        }
-
-        if(hitRightDown.collider != null)
-        {
-            if(hitRightDown.collider.tag == "ground")
-            {
-                if (scale == 5)
-                {
-                    checks = 0 < moveInput;
-                }
-                else if (scale < 0)
-                {
-                    checks = 0 > moveInput;
-                }
-            }
-        }
-
-        return checks;
-    }
-
     private Vector3 gravietyDirection(string mode)
     {
         switch(mode)
@@ -361,7 +316,10 @@ public class PlayerContoller : MonoBehaviour
                 Quaternion q = Quaternion.FromToRotation(
                         transform.up,
                         hits[index].normal);
-                transform.rotation *= q;
+                if (movementNomal.x < 1 && movementNomal.x > -1)
+                {
+                    transform.rotation *= q;
+                }
             }
         }
     }
@@ -493,7 +451,29 @@ public class PlayerContoller : MonoBehaviour
 
     public void isMoveStop(bool stops)
     {
+        if (transform.localScale.x > 0 && stops)
+        {
+            if(moveInput < 0)
+            {
+                stop = false;
+                return;
+            }    
+        }
+        else if (transform.localScale.x < 0 && stops)
+        {
+            if (moveInput > 0)
+            {
+                stop = false;
+                return;
+            }
+        }
+
         stop = stops;
+    }
+
+    public void isJump(bool jump)
+    {
+        jumpStop = jump;
     }
 
     void OnCollisionEnter2D(Collision2D collision)

@@ -5,62 +5,58 @@ using UnityEngine;
 public class PlayerContoller : MonoBehaviour
 {
     private Rigidbody2D rb;
+    [SerializeField] private ContactFilter2D filter2d;
+    private Animator animator;
+
+    private AudioSource dashSound;
+    private bool dashSoundIsPlay = false;
+    private bool dashSoundIsVolume = false;
+    public float fadeSecond;
+    private float fadeDeltaTime = 0;
+
     public float speed;
-    public float jumpForce;
     private float moveInput;
     private Vector2 movementNomal = new Vector2(0, 0);
 
     private bool isGounded;
-    public LayerMask whatIsGournd;
 
-    [SerializeField] private ContactFilter2D filter2d;
-
+    public float jumpForce;
     private float jumpTimeCounter;
     public float jumpTime;
     private bool isJumpinig;
+    public float isStop;
+    private bool jumpStop;
 
     public float gravity;
     public string gravityMode;
-
-    public float isStop;
-    private bool jumpStop;
 
     private Transform gravityDown;
     private Transform gravityRightUp;
     private Transform gravityRightDown;
     private Transform gravityJump;
 
-    private Animator animator;
-    
-    private bool isStopMoveDamage = false;
-
     private bool dash = false;
     private bool isDash = false;
-
-    private GameObject attackColider;
-
-    private float attackCounter;
-    public float attackTime;
+    public GameObject dashEffect;
     float speedUp = 1f;
 
-    private GameObject target;
+    private GameObject attackColider;
+    private float attackCounter;
+    public float attackTime;
 
+    private GameObject target;
+    Vector3 warp;
     private Vector2 warpVector;
     private Vector2 warpVectorTmp;
     public bool isAttack;
 
-    Vector3 warp;
-
     private bool stop;
-
     private float damageCountor = 0;
+    private bool isStopMoveDamage = false;
 
     private GameObject particleSmork;
-
     public GameObject boom;
-
-    public GameObject dashEffect;
-
+    public GameObject warpEffect;
     private Transform particle;
     // Start is called before the first frame update
     void Start()
@@ -72,13 +68,12 @@ public class PlayerContoller : MonoBehaviour
         gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
         gravityJump = gravityTrandform.Find("isGrounded").gameObject.transform;
-
         attackColider = transform.Find("attackColider").gameObject;
-
         target = transform.Find("target").gameObject;
         particleSmork = transform.Find("Particle System").gameObject;
         dashEffect = transform.Find("dashEffect").gameObject;
         particle = Camera.main.transform.Find("Concentration");
+        dashSound = transform.GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -112,6 +107,7 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            fadeOut();
             dashEffect.SetActive(false);
             animator.SetBool("walk", false);
         }
@@ -179,6 +175,7 @@ public class PlayerContoller : MonoBehaviour
             dash = false;
             dashEffect.SetActive(false);
             particle.gameObject.SetActive(false);
+            fadeOut();
         }
 
         isGounded = downCheck();
@@ -191,6 +188,12 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("right", false);
             particleSmork.SetActive(true);
             rb.mass = 0.5f;
+
+            if (dash)
+            {
+                fadeIn();
+            }
+
             if (isStopMoveDamage)
             {
                 animator.SetBool("damage", false);
@@ -203,12 +206,15 @@ public class PlayerContoller : MonoBehaviour
             attackColider.SetActive(true);
             animator.SetBool("down", true);
             particleSmork.SetActive(false);
+            fadeOut();
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
+                Time.timeScale = 0.6f;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
                 transform.position = warpVector + new Vector2(0, 1);
+                Instantiate(warpEffect, warpVector, transform.rotation);
             }
         }
 
@@ -217,6 +223,10 @@ public class PlayerContoller : MonoBehaviour
             jump(gravityMode, 20);
             dashEffect.SetActive(false);
             attackCounter -= Time.deltaTime;
+            if(attackCounter <= 0)
+            {
+                Time.timeScale = 1f;
+            }
             return;
         }
 
@@ -431,6 +441,42 @@ public class PlayerContoller : MonoBehaviour
         else if (gravityMode == "left")
         {
             rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+        }
+    }
+
+    void fadeIn()
+    {
+        if (!dashSoundIsPlay)
+        {
+            dashSoundIsPlay = true;
+            dashSound.Play();
+        }
+
+        if (!dashSoundIsVolume)
+        {
+            fadeDeltaTime += Time.deltaTime;
+            if(fadeDeltaTime >= fadeSecond)
+            {
+                fadeDeltaTime = fadeSecond;
+                dashSoundIsVolume = true;
+            }
+
+            dashSound.volume = (fadeDeltaTime / fadeSecond) - 0.5f; 
+        }
+    }
+
+    void fadeOut()
+    {
+        if (dashSoundIsVolume)
+        {
+            fadeDeltaTime += Time.deltaTime;
+            if (fadeDeltaTime >= fadeSecond)
+            {
+                fadeDeltaTime = fadeSecond;
+                dashSoundIsVolume = false;
+            }
+
+            dashSound.volume = 1.0f - fadeDeltaTime / fadeSecond;
         }
     }
 

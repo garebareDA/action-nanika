@@ -8,6 +8,8 @@ public class boom : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        AudioSource audio = transform.GetComponent<AudioSource>();
+        audio.Play();
         Destroy(gameObject, anim.length);
     }
 }

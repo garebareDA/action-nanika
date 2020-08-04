@@ -11,12 +11,14 @@ public class jumpStep : MonoBehaviour
     private Rigidbody2D player;
     private Animator jumpAnimator;
     private bool jumping;
+    private AudioSource sound;
     // Start is called before the first frame update
     void Start()
     {
         target = transform.Find("jumpTarget").transform.position;
         jumpAnimator = gameObject.GetComponent<Animator>();
         player = GameObject.FindGameObjectWithTag("Player").gameObject.GetComponent<Rigidbody2D>();
+        sound = transform.GetComponent<AudioSource>();
         jumping = false;
     }
 
@@ -40,6 +42,7 @@ public class jumpStep : MonoBehaviour
     {
         if (collision.transform.tag == "Player")
         {
+            sound.Play();
             Vector3 shotVector = target - transform.position;
             player.SendMessage("isJump", true);
             player.transform.position = transform.position + new Vector3(0, 1);

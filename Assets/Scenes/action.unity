@@ -1881,7 +1881,7 @@ PrefabInstance:
     - target: {fileID: 4069405568034574845, guid: fd3df0eadaa426345833caf7c4052857,
         type: 3}
       propertyPath: distance
-      value: 5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4069405568034574845, guid: fd3df0eadaa426345833caf7c4052857,
         type: 3}
@@ -7939,6 +7939,11 @@ PrefabInstance:
       propertyPath: Loop
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7707455465735317809, guid: e150c5f89836c6f42a074a4e7e09c2b3,
+        type: 3}
+      propertyPath: m_audioClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 4c6e90a54bdf104489e61392c2d26ec5, type: 3}
     - target: {fileID: 8183524147466092088, guid: e150c5f89836c6f42a074a4e7e09c2b3,
         type: 3}
       propertyPath: filter2dFoward.layerMask.m_Bits

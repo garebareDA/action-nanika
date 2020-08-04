@@ -9,7 +9,9 @@ public class PlayerContoller : MonoBehaviour
     private Animator animator;
 
     private AudioSource dashSound;
-    private bool dashSoundIsPlay = false;
+    private AudioSource jumpSound;
+    private AudioSource playerDamageSound;
+
     private bool dashSoundIsVolume = false;
     public float fadeSecond;
     private float fadeDeltaTime = 0;
@@ -58,6 +60,8 @@ public class PlayerContoller : MonoBehaviour
     public GameObject boom;
     public GameObject warpEffect;
     private Transform particle;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -73,7 +77,12 @@ public class PlayerContoller : MonoBehaviour
         particleSmork = transform.Find("Particle System").gameObject;
         dashEffect = transform.Find("dashEffect").gameObject;
         particle = Camera.main.transform.Find("Concentration");
-        dashSound = transform.GetComponent<AudioSource>();
+        AudioSource[] audios = transform.GetComponents<AudioSource>();
+        dashSound = audios[0];
+        jumpSound = audios[1];
+        playerDamageSound = audios[2];
+        dashSound.volume = 0;
+        dashSound.Play();
     }
 
     // Update is called once per frame
@@ -189,9 +198,13 @@ public class PlayerContoller : MonoBehaviour
             particleSmork.SetActive(true);
             rb.mass = 0.5f;
 
-            if (dash)
+            if (dash && moveInput != 0)
             {
                 fadeIn();
+            }
+            else
+            {
+                fadeOut();
             }
 
             if (isStopMoveDamage)
@@ -202,11 +215,12 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            fadeOut();
             rb.mass = 0.5f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
             particleSmork.SetActive(false);
-            fadeOut();
+            
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
                 Time.timeScale = 0.6f;
@@ -232,6 +246,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(isGounded && Input.GetKeyDown(KeyCode.Space))
         {
+            jumpSound.Play();
             rb.mass = 2;
             animator.SetBool("up", true);
             isJumpinig = true;
@@ -241,6 +256,7 @@ public class PlayerContoller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
+            fadeOut();
             rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
@@ -257,6 +273,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(Input.GetKeyUp(KeyCode.Space))
         {
+            jumpSound.Stop();
             rb.mass = 2;
             animator.SetBool("up", false);
             if (!isGounded)
@@ -320,7 +337,7 @@ public class PlayerContoller : MonoBehaviour
         if (h > 1)
         {
             int index = 1;
-            if (hits[index].collider.tag == "ground")
+            if (hits[index].collider.tag == "ground" && isGounded)
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
                 Quaternion q = Quaternion.FromToRotation(
@@ -446,13 +463,7 @@ public class PlayerContoller : MonoBehaviour
 
     void fadeIn()
     {
-        if (!dashSoundIsPlay)
-        {
-            dashSoundIsPlay = true;
-            dashSound.Play();
-        }
-
-        if (!dashSoundIsVolume)
+        if (!dashSoundIsVolume && Input.GetKey(KeyCode.LeftShift))
         {
             fadeDeltaTime += Time.deltaTime;
             if(fadeDeltaTime >= fadeSecond)
@@ -461,7 +472,11 @@ public class PlayerContoller : MonoBehaviour
                 dashSoundIsVolume = true;
             }
 
-            dashSound.volume = (fadeDeltaTime / fadeSecond) - 0.5f; 
+            dashSound.volume = (fadeDeltaTime / fadeSecond) - 0.5f;
+        }
+        else
+        {
+            dashSoundIsVolume = true;
         }
     }
 
@@ -537,6 +552,7 @@ public class PlayerContoller : MonoBehaviour
                 isStopMoveDamage = true;
                 rb.mass = 3;
                 damageCountor = 0.4f;
+                playerDamageSound.Play();
             }
         }
     }

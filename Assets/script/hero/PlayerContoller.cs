@@ -5,54 +5,70 @@ using UnityEngine;
 public class PlayerContoller : MonoBehaviour
 {
     private Rigidbody2D rb;
+    [SerializeField] private ContactFilter2D filter2d;
+    private Animator animator;
+
+    private AudioSource dashSound;
+    private AudioSource jumpSound;
+    private AudioSource playerDamageSound;
+    private AudioSource walkSound;
+    private AudioSource dashEffectSound;
+
+    private bool dashSoundIsVolume = false;
+    private bool playDashsound = true;
+    public float fadeSecond;
+    private float fadeDeltaTime = 0;
+
+    private bool walkSoundIsVolume = false;
+    public float fadeWalkSecond;
+    private float fadeWalkDeltaTime = 0;
+
     public float speed;
-    public float jumpForce;
     private float moveInput;
     private Vector2 movementNomal = new Vector2(0, 0);
 
     private bool isGounded;
-    public LayerMask whatIsGournd;
 
-    [SerializeField] private ContactFilter2D filter2d;
-
+    public float jumpForce;
     private float jumpTimeCounter;
     public float jumpTime;
     private bool isJumpinig;
+    public float isStop;
+    private bool jumpStop;
 
     public float gravity;
     public string gravityMode;
-
-    public float isStop;
 
     private Transform gravityDown;
     private Transform gravityRightUp;
     private Transform gravityRightDown;
     private Transform gravityJump;
 
-    private Animator animator;
-    
-    private bool isStopMoveDamage = false;
-
     private bool dash = false;
     private bool isDash = false;
-
-    private GameObject attackColider;
-
-    private float attackCounter;
-    public float attackTime;
+    public GameObject dashEffect;
     float speedUp = 1f;
 
-    private GameObject target;
+    private GameObject attackColider;
+    private float attackCounter;
+    public float attackTime;
 
+    private GameObject target;
+    Vector3 warp;
     private Vector2 warpVector;
     private Vector2 warpVectorTmp;
     public bool isAttack;
 
-    Vector3 warp;
-
     private bool stop;
-
     private float damageCountor = 0;
+    private bool isStopMoveDamage = false;
+
+    private GameObject particleSmork;
+    public GameObject boom;
+    public GameObject warpEffect;
+    private Transform particle;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -63,17 +79,29 @@ public class PlayerContoller : MonoBehaviour
         gravityRightUp = gravityTrandform.Find("gravityRightUp").gameObject.transform;
         gravityRightDown = gravityTrandform.Find("gravityRightDown").gameObject.transform;
         gravityJump = gravityTrandform.Find("isGrounded").gameObject.transform;
-
         attackColider = transform.Find("attackColider").gameObject;
-
         target = transform.Find("target").gameObject;
+        particleSmork = transform.Find("Particle System").gameObject;
+        dashEffect = transform.Find("dashEffect").gameObject;
+        particle = Camera.main.transform.Find("Concentration");
+        AudioSource[] audios = transform.GetComponents<AudioSource>();
+        dashSound = audios[0];
+        jumpSound = audios[1];
+        playerDamageSound = audios[2];
+        walkSound = audios[3];
+        dashEffectSound = audios[4];
+
+        dashSound.volume = 0;
+        dashSound.Play();
+  
+        walkSound.volume = 0;
+        walkSound.Play();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
-        bool checkeRay = checkedRay(moveInput);
 
         if(attackCounter > 0)
         {
@@ -84,7 +112,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (isStopMoveDamage || checkeRay || stop)
+        if (isStopMoveDamage || stop || jumpStop)
         {   
             return;
         }
@@ -101,6 +129,9 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            fadeOut();
+            fadeOutWalk();
+            dashEffect.SetActive(false);
             animator.SetBool("walk", false);
         }
 
@@ -147,8 +178,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        bool checkeRay = checkedRay(moveInput);
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !checkeRay)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !stop)
         {
             isDash = true;
         }
@@ -158,12 +188,27 @@ public class PlayerContoller : MonoBehaviour
             speedUp = 2f;
             animator.SetBool("dash", true);
             dash = true;
+            dashEffect.SetActive(true);
+            particle.gameObject.SetActive(true);
+            if (playDashsound && attackCounter <= 0)
+            {
+                playDashsound = false;
+                dashEffectSound.Play();
+            }
         }
         else
         {
             speedUp = 1f;
             animator.SetBool("dash", false);
             dash = false;
+            dashEffect.SetActive(false);
+            particle.gameObject.SetActive(false);
+            fadeOut();
+        }
+
+        if (Input.GetKeyUp(KeyCode.LeftShift))
+        {
+            playDashsound = true;
         }
 
         isGounded = downCheck();
@@ -174,7 +219,27 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("up", false);
             animator.SetBool("down", false);
             animator.SetBool("right", false);
+            particleSmork.SetActive(true);
             rb.mass = 0.5f;
+
+            if(moveInput != 0 && !dash)
+            {
+                fadeInWalk();
+            }
+            else
+            {
+                fadeOutWalk();
+            }
+
+            if (dash && moveInput != 0)
+            {
+                fadeIn();
+            }
+            else
+            {
+                fadeOut();
+            }
+
             if (isStopMoveDamage)
             {
                 animator.SetBool("damage", false);
@@ -183,26 +248,39 @@ public class PlayerContoller : MonoBehaviour
         }
         else
         {
+            fadeOut();
+            fadeOutWalk();
+            rb.mass = 0.5f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
-            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack)
+            particleSmork.SetActive(false);
+            
+            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
+                Time.timeScale = 0.8f;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
                 transform.position = warpVector + new Vector2(0, 1);
+                Instantiate(warpEffect, warpVector, transform.rotation);
             }
         }
 
         if(attackCounter > 0)
         {
             jump(gravityMode, 20);
+            dashEffect.SetActive(false);
             attackCounter -= Time.deltaTime;
+            if(attackCounter <= 0)
+            {
+                Time.timeScale = 1f;
+            }
             return;
         }
 
         if(isGounded && Input.GetKeyDown(KeyCode.Space))
         {
+            jumpSound.Play();
             rb.mass = 2;
             animator.SetBool("up", true);
             isJumpinig = true;
@@ -212,6 +290,7 @@ public class PlayerContoller : MonoBehaviour
 
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
+            fadeOut();
             rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
@@ -228,6 +307,7 @@ public class PlayerContoller : MonoBehaviour
 
         if(Input.GetKeyUp(KeyCode.Space))
         {
+            jumpSound.Stop();
             rb.mass = 2;
             animator.SetBool("up", false);
             if (!isGounded)
@@ -236,50 +316,6 @@ public class PlayerContoller : MonoBehaviour
             }
             isJumpinig = false;
         }
-    }
-
-    private bool checkedRay(float moveInput)
-    {
-        float scale = transform.localScale.x;
-        bool checks = false;
-
-        Ray rayRightUp = new Ray(gravityRightUp.position, -gravityRightUp.up);
-        Debug.DrawRay(rayRightUp.origin, rayRightUp.direction, Color.red);
-        RaycastHit2D hitRightUp = Physics2D.Raycast(rayRightUp.origin, rayRightUp.direction, isStop);
-
-        Ray rayRightDown = new Ray(gravityRightDown.position, -gravityRightDown.up);
-        Debug.DrawRay(rayRightDown.origin, rayRightDown.direction, Color.red);
-        RaycastHit2D hitRightDown = Physics2D.Raycast(rayRightDown.origin, rayRightDown.direction, isStop);
-        if (hitRightUp.collider != null)
-        {
-            if (hitRightUp.collider.tag == "ground")
-            {
-                if(scale > 0)
-                {
-                    checks = 0 < moveInput;
-                }else if(scale < 0)
-                {
-                    checks = 0 > moveInput;
-                }
-            }
-        }
-
-        if(hitRightDown.collider != null)
-        {
-            if(hitRightDown.collider.tag == "ground")
-            {
-                if (scale == 5)
-                {
-                    checks = 0 < moveInput;
-                }
-                else if (scale < 0)
-                {
-                    checks = 0 > moveInput;
-                }
-            }
-        }
-
-        return checks;
     }
 
     private Vector3 gravietyDirection(string mode)
@@ -335,13 +371,16 @@ public class PlayerContoller : MonoBehaviour
         if (h > 1)
         {
             int index = 1;
-            if (hits[index].collider.tag == "ground")
+            if (hits[index].collider.tag == "ground" && isGounded)
             {
                 movementNomal = new Vector2(hits[index].normal.x, hits[index].normal.y);
                 Quaternion q = Quaternion.FromToRotation(
                         transform.up,
                         hits[index].normal);
-                transform.rotation *= q;
+                if (movementNomal.x < 1 && movementNomal.x > -1)
+                {
+                    transform.rotation *= q;
+                }
             }
         }
     }
@@ -440,7 +479,7 @@ public class PlayerContoller : MonoBehaviour
     {
         if (gravityMode == "up")
         {
-            rb.velocity = new Vector2(speed, rb.velocity.y - movementNomal.y);
+            rb.velocity = new Vector2(-speed, rb.velocity.y - movementNomal.y);
         }
         else if (gravityMode == "down")
         {
@@ -453,6 +492,74 @@ public class PlayerContoller : MonoBehaviour
         else if (gravityMode == "left")
         {
             rb.velocity = new Vector2(rb.velocity.x - movementNomal.x, -speed);
+        }
+    }
+
+    void fadeIn()
+    {
+        if (!dashSoundIsVolume && Input.GetKey(KeyCode.LeftShift))
+        {
+            fadeDeltaTime += Time.deltaTime;
+            if(fadeDeltaTime >= fadeSecond)
+            {
+                fadeDeltaTime = fadeSecond;
+                dashSoundIsVolume = true;
+            }
+
+            dashSound.volume = (fadeDeltaTime / fadeSecond) - 0.5f;
+        }
+        else
+        {
+            dashSoundIsVolume = true;
+        }
+    }
+
+    void fadeOut()
+    {
+        if (dashSoundIsVolume)
+        {
+            fadeDeltaTime += Time.deltaTime;
+            if (fadeDeltaTime >= fadeSecond)
+            {
+                fadeDeltaTime = fadeSecond;
+                dashSoundIsVolume = false;
+            }
+
+            dashSound.volume = 1.0f - fadeDeltaTime / fadeSecond;
+        }
+    }
+
+    void fadeInWalk()
+    {
+        if (!walkSoundIsVolume)
+        {
+            fadeWalkDeltaTime += Time.deltaTime;
+            if (fadeWalkDeltaTime >= fadeWalkSecond)
+            {
+                fadeWalkDeltaTime = fadeWalkSecond;
+                walkSoundIsVolume = true;
+            }
+
+            walkSound.volume = (fadeWalkDeltaTime / fadeWalkSecond) - 0.5f;
+        }
+        else
+        {
+            walkSoundIsVolume = true;
+        }
+    }
+
+    void fadeOutWalk()
+    {
+        if (walkSoundIsVolume)
+        {
+            fadeWalkDeltaTime += Time.deltaTime;
+            if (fadeWalkDeltaTime >= fadeWalkSecond)
+            {
+                fadeWalkDeltaTime = fadeWalkSecond;
+                walkSoundIsVolume = false;
+            }
+
+            walkSound.volume = 1.0f - fadeWalkDeltaTime / fadeWalkSecond;
         }
     }
 
@@ -473,7 +580,29 @@ public class PlayerContoller : MonoBehaviour
 
     public void isMoveStop(bool stops)
     {
+        if (transform.localScale.x > 0 && stops)
+        {
+            if(moveInput < 0)
+            {
+                stop = false;
+                return;
+            }    
+        }
+        else if (transform.localScale.x < 0 && stops)
+        {
+            if (moveInput > 0)
+            {
+                stop = false;
+                return;
+            }
+        }
+
         stop = stops;
+    }
+
+    public void isJump(bool jump)
+    {
+        jumpStop = jump;
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -482,6 +611,7 @@ public class PlayerContoller : MonoBehaviour
         {
             if (dash && collision.gameObject.tag == "enemy")
             {
+                Instantiate(boom, collision.transform.position, collision.transform.rotation);
                 Destroy(collision.gameObject);
             }
             else
@@ -490,6 +620,7 @@ public class PlayerContoller : MonoBehaviour
                 isStopMoveDamage = true;
                 rb.mass = 3;
                 damageCountor = 0.4f;
+                playerDamageSound.Play();
             }
         }
     }

@@ -18,11 +18,13 @@ public class whieelEnemy : MonoBehaviour
     public float moveInput;
 
     private Vector2 firstPosition;
+    private Quaternion firstRotate;
 
     private bool reset = false;
 
     private SpriteRenderer myRender;
     private float counter;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -32,6 +34,7 @@ public class whieelEnemy : MonoBehaviour
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
         dashRaycast = gravityTrandform.Find("dashRay").gameObject.transform;
         firstPosition = transform.position;
+        firstRotate = transform.rotation;
         speedUp = 1f;
         dashRays();
         rayGravity();
@@ -71,6 +74,7 @@ public class whieelEnemy : MonoBehaviour
         else
         {
             transform.position = firstPosition;
+            transform.rotation = firstRotate;
         }
 
     }

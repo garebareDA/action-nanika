@@ -11,10 +11,17 @@ public class PlayerContoller : MonoBehaviour
     private AudioSource dashSound;
     private AudioSource jumpSound;
     private AudioSource playerDamageSound;
+    private AudioSource walkSound;
+    private AudioSource dashEffectSound;
 
     private bool dashSoundIsVolume = false;
+    private bool playDashsound = true;
     public float fadeSecond;
     private float fadeDeltaTime = 0;
+
+    private bool walkSoundIsVolume = false;
+    public float fadeWalkSecond;
+    private float fadeWalkDeltaTime = 0;
 
     public float speed;
     private float moveInput;
@@ -81,8 +88,14 @@ public class PlayerContoller : MonoBehaviour
         dashSound = audios[0];
         jumpSound = audios[1];
         playerDamageSound = audios[2];
+        walkSound = audios[3];
+        dashEffectSound = audios[4];
+
         dashSound.volume = 0;
         dashSound.Play();
+  
+        walkSound.volume = 0;
+        walkSound.Play();
     }
 
     // Update is called once per frame
@@ -117,6 +130,7 @@ public class PlayerContoller : MonoBehaviour
         else
         {
             fadeOut();
+            fadeOutWalk();
             dashEffect.SetActive(false);
             animator.SetBool("walk", false);
         }
@@ -176,6 +190,11 @@ public class PlayerContoller : MonoBehaviour
             dash = true;
             dashEffect.SetActive(true);
             particle.gameObject.SetActive(true);
+            if (playDashsound && attackCounter <= 0)
+            {
+                playDashsound = false;
+                dashEffectSound.Play();
+            }
         }
         else
         {
@@ -185,6 +204,11 @@ public class PlayerContoller : MonoBehaviour
             dashEffect.SetActive(false);
             particle.gameObject.SetActive(false);
             fadeOut();
+        }
+
+        if (Input.GetKeyUp(KeyCode.LeftShift))
+        {
+            playDashsound = true;
         }
 
         isGounded = downCheck();
@@ -197,6 +221,15 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("right", false);
             particleSmork.SetActive(true);
             rb.mass = 0.5f;
+
+            if(moveInput != 0 && !dash)
+            {
+                fadeInWalk();
+            }
+            else
+            {
+                fadeOutWalk();
+            }
 
             if (dash && moveInput != 0)
             {
@@ -216,6 +249,7 @@ public class PlayerContoller : MonoBehaviour
         else
         {
             fadeOut();
+            fadeOutWalk();
             rb.mass = 0.5f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
@@ -223,7 +257,7 @@ public class PlayerContoller : MonoBehaviour
             
             if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
-                Time.timeScale = 0.6f;
+                Time.timeScale = 0.8f;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
@@ -492,6 +526,40 @@ public class PlayerContoller : MonoBehaviour
             }
 
             dashSound.volume = 1.0f - fadeDeltaTime / fadeSecond;
+        }
+    }
+
+    void fadeInWalk()
+    {
+        if (!walkSoundIsVolume)
+        {
+            fadeWalkDeltaTime += Time.deltaTime;
+            if (fadeWalkDeltaTime >= fadeWalkSecond)
+            {
+                fadeWalkDeltaTime = fadeWalkSecond;
+                walkSoundIsVolume = true;
+            }
+
+            walkSound.volume = (fadeWalkDeltaTime / fadeWalkSecond) - 0.5f;
+        }
+        else
+        {
+            walkSoundIsVolume = true;
+        }
+    }
+
+    void fadeOutWalk()
+    {
+        if (walkSoundIsVolume)
+        {
+            fadeWalkDeltaTime += Time.deltaTime;
+            if (fadeWalkDeltaTime >= fadeWalkSecond)
+            {
+                fadeWalkDeltaTime = fadeWalkSecond;
+                walkSoundIsVolume = false;
+            }
+
+            walkSound.volume = 1.0f - fadeWalkDeltaTime / fadeWalkSecond;
         }
     }
 

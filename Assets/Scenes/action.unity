@@ -1886,7 +1886,7 @@ PrefabInstance:
     - target: {fileID: 4069405568034574845, guid: fd3df0eadaa426345833caf7c4052857,
         type: 3}
       propertyPath: jumpCounter
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 4069405568292369924, guid: fd3df0eadaa426345833caf7c4052857,
         type: 3}
@@ -7924,6 +7924,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4306926540877095497, guid: e150c5f89836c6f42a074a4e7e09c2b3,
+        type: 3}
+      propertyPath: m_Volume
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 7274849422809880302, guid: e150c5f89836c6f42a074a4e7e09c2b3,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -66,8 +66,8 @@ public class PlayerContoller : MonoBehaviour
     private GameObject particleSmork;
     public GameObject boom;
     public GameObject warpEffect;
+    private GameObject dashEffectOver;
     private Transform particle;
-
 
     // Start is called before the first frame update
     void Start()
@@ -83,6 +83,7 @@ public class PlayerContoller : MonoBehaviour
         target = transform.Find("target").gameObject;
         particleSmork = transform.Find("Particle System").gameObject;
         dashEffect = transform.Find("dashEffect").gameObject;
+        dashEffectOver = transform.Find("dashEffectOver").gameObject;
         particle = Camera.main.transform.Find("Concentration");
         AudioSource[] audios = transform.GetComponents<AudioSource>();
         dashSound = audios[0];
@@ -189,6 +190,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", true);
             dash = true;
             dashEffect.SetActive(true);
+            dashEffectOver.SetActive(true);
             particle.gameObject.SetActive(true);
             if (playDashsound && attackCounter <= 0)
             {
@@ -202,6 +204,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", false);
             dash = false;
             dashEffect.SetActive(false);
+            dashEffectOver.SetActive(false);
             particle.gameObject.SetActive(false);
             fadeOut();
         }

@@ -401,6 +401,7 @@ public class PlayerContoller : MonoBehaviour
 
     public void changeGravityMode(string mode)
     {
+        string bforeode = gravityMode;
         if (gravityMode != mode)
         {
             isJumpinig = false;
@@ -422,10 +423,18 @@ public class PlayerContoller : MonoBehaviour
         {
             case "up":
                 transform.eulerAngles = new Vector3(0, 0, 180f);
+                if (bforeode == "down")
+                {
+                    transform.position += new Vector3(0, 1, 0);
+                }
                 break;
 
             case "down":
                 transform.eulerAngles = Vector3.zero;
+                if(bforeode == "up")
+                {
+                    transform.position -= new Vector3(0, 1, 0);
+                }
                 break;
 
             case "left":

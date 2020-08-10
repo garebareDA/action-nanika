@@ -1,12 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerContoller : MonoBehaviour
 {
     private Rigidbody2D rb;
     [SerializeField] private ContactFilter2D filter2d;
     private Animator animator;
+
+    public GameObject helthObject;
+    private Transform helths;
+    private int helth;
+
+    public GameObject gravityBar;
+
+    public Text timeText;
+    private float time;
+    private int minite;
 
     private AudioSource dashSound;
     private AudioSource jumpSound;
@@ -66,13 +77,14 @@ public class PlayerContoller : MonoBehaviour
     private GameObject particleSmork;
     public GameObject boom;
     public GameObject warpEffect;
+    private GameObject dashEffectOver;
     private Transform particle;
-
 
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        helths = helthObject.transform;
         animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
@@ -83,6 +95,7 @@ public class PlayerContoller : MonoBehaviour
         target = transform.Find("target").gameObject;
         particleSmork = transform.Find("Particle System").gameObject;
         dashEffect = transform.Find("dashEffect").gameObject;
+        dashEffectOver = transform.Find("dashEffectOver").gameObject;
         particle = Camera.main.transform.Find("Concentration");
         AudioSource[] audios = transform.GetComponents<AudioSource>();
         dashSound = audios[0];
@@ -96,11 +109,17 @@ public class PlayerContoller : MonoBehaviour
   
         walkSound.volume = 0;
         walkSound.Play();
+
+        helth = 5;
+
+        time = 0;
+        minite = 0;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        rayGravity();
         moveInput = Input.GetAxisRaw("Horizontal");
 
         if(attackCounter > 0)
@@ -159,6 +178,14 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
+        time += Time.deltaTime;
+        if(time >= 60f)
+        {
+            minite++;
+            time -= 60f;
+        }
+        timeText.text = "Time " + minite.ToString("00") + ":" + string.Format("{00:00.00}", time);
+
         rayGravity();
         Vector3 gravityVector = gravietyDirection(gravityMode);
         rb.AddForce(gravityVector);
@@ -189,6 +216,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", true);
             dash = true;
             dashEffect.SetActive(true);
+            dashEffectOver.SetActive(true);
             particle.gameObject.SetActive(true);
             if (playDashsound && attackCounter <= 0)
             {
@@ -202,6 +230,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("dash", false);
             dash = false;
             dashEffect.SetActive(false);
+            dashEffectOver.SetActive(false);
             particle.gameObject.SetActive(false);
             fadeOut();
         }
@@ -278,7 +307,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if(isGounded && Input.GetKeyDown(KeyCode.Space))
+        if(isGounded && Input.GetKeyDown(KeyCode.Space) && !jumpStop)
         {
             jumpSound.Play();
             rb.mass = 2;
@@ -324,18 +353,22 @@ public class PlayerContoller : MonoBehaviour
         {
             case "up":
                 Vector3 gravityVectorUp = new Vector3(0, -gravity, 0);
+                gravityBar.transform.eulerAngles = new Vector3(0, 0, 0);
                 return gravityVectorUp;
 
             case "left":
                 Vector3 gravityVectorLeft = new Vector3 (gravity, 0, 0);
+                gravityBar.transform.eulerAngles = new Vector3(0, 0, 90);
                 return gravityVectorLeft;
 
             case "right":
                 Vector3 gravityVectorRight = new Vector3(-gravity, 0, 0);
+                gravityBar.transform.eulerAngles = new Vector3(0, 0, -90);
                 return gravityVectorRight;
 
             default:
                 Vector3 gravityVectorDown = new Vector3(0, gravity, 0);
+                gravityBar.transform.eulerAngles = new Vector3(0, 0, 180);
                 return gravityVectorDown;
         }
     }
@@ -366,7 +399,7 @@ public class PlayerContoller : MonoBehaviour
     {
         Ray ray = new Ray(gravityDown.position, -gravityDown.up);
         RaycastHit2D[] hits = new RaycastHit2D[2];
-        int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
+        int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits, 1f);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
         if (h > 1)
         {
@@ -379,9 +412,13 @@ public class PlayerContoller : MonoBehaviour
                         hits[index].normal);
                 if (movementNomal.x < 1 && movementNomal.x > -1)
                 {
-                    transform.rotation *= q;
+                   Quaternion rote = transform.rotation * q;
+                    transform.rotation = rote;
                 }
             }
+        }else
+        {
+            gravitySwitch(gravityMode);
         }
     }
 
@@ -398,6 +435,7 @@ public class PlayerContoller : MonoBehaviour
 
     public void changeGravityMode(string mode)
     {
+        string bforeode = gravityMode;
         if (gravityMode != mode)
         {
             isJumpinig = false;
@@ -415,6 +453,36 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
+        switch (mode)
+        {
+            case "up":
+                transform.eulerAngles = new Vector3(0, 0, 180f);
+                if (bforeode == "down")
+                {
+                    transform.position += new Vector3(0, 1, 0);
+                }
+                break;
+
+            case "down":
+                transform.eulerAngles = Vector3.zero;
+                if(bforeode == "up")
+                {
+                    transform.position -= new Vector3(0, 1, 0);
+                }
+                break;
+
+            case "left":
+                transform.eulerAngles = new Vector3(0, 0, -90f);
+                break;
+
+            case "right":
+                transform.eulerAngles = new Vector3(0, 0, 90f);
+                break;
+        }
+    }
+
+    private void gravitySwitch(string mode)
+    {
         switch (mode)
         {
             case "up":
@@ -440,6 +508,8 @@ public class PlayerContoller : MonoBehaviour
         jump(gravityMode, 5);
         notMoveGravity();
     }
+
+
 
     private void notMoveGravity()
     {
@@ -605,6 +675,12 @@ public class PlayerContoller : MonoBehaviour
         jumpStop = jump;
     }
 
+    private void helthCount()
+    {
+        helths.GetChild(helth + 1).gameObject.SetActive(false);
+        helths.GetChild(helth).gameObject.SetActive(true);
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
@@ -621,6 +697,8 @@ public class PlayerContoller : MonoBehaviour
                 rb.mass = 3;
                 damageCountor = 0.4f;
                 playerDamageSound.Play();
+                helth--;
+                helthCount();
             }
         }
     }

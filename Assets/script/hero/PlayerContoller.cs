@@ -119,6 +119,7 @@ public class PlayerContoller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        rayGravity();
         moveInput = Input.GetAxisRaw("Horizontal");
 
         if(attackCounter > 0)
@@ -306,7 +307,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if(isGounded && Input.GetKeyDown(KeyCode.Space))
+        if(isGounded && Input.GetKeyDown(KeyCode.Space) && !jumpStop)
         {
             jumpSound.Play();
             rb.mass = 2;
@@ -398,7 +399,7 @@ public class PlayerContoller : MonoBehaviour
     {
         Ray ray = new Ray(gravityDown.position, -gravityDown.up);
         RaycastHit2D[] hits = new RaycastHit2D[2];
-        int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits);
+        int h = Physics2D.RaycastNonAlloc(ray.origin, ray.direction, hits, 1f);
         Debug.DrawRay(ray.origin, ray.direction, Color.red);
         if (h > 1)
         {
@@ -411,9 +412,13 @@ public class PlayerContoller : MonoBehaviour
                         hits[index].normal);
                 if (movementNomal.x < 1 && movementNomal.x > -1)
                 {
-                    transform.rotation *= q;
+                   Quaternion rote = transform.rotation * q;
+                    transform.rotation = rote;
                 }
             }
+        }else
+        {
+            gravitySwitch(gravityMode);
         }
     }
 
@@ -476,11 +481,35 @@ public class PlayerContoller : MonoBehaviour
         }
     }
 
+    private void gravitySwitch(string mode)
+    {
+        switch (mode)
+        {
+            case "up":
+                transform.eulerAngles = new Vector3(0, 0, 180f);
+                break;
+
+            case "down":
+                transform.eulerAngles = Vector3.zero;
+                break;
+
+            case "left":
+                transform.eulerAngles = new Vector3(0, 0, -90f);
+                break;
+
+            case "right":
+                transform.eulerAngles = new Vector3(0, 0, 90f);
+                break;
+        }
+    }
+
     private void damage(float speed)
     {
         jump(gravityMode, 5);
         notMoveGravity();
     }
+
+
 
     private void notMoveGravity()
     {

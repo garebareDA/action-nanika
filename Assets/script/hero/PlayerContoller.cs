@@ -10,6 +10,7 @@ public class PlayerContoller : MonoBehaviour
     private Animator animator;
 
     public GameObject helthObject;
+    private Animator helthAnimator;
     private Transform helths;
     private int helth;
 
@@ -85,6 +86,7 @@ public class PlayerContoller : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         helths = helthObject.transform;
+        helthAnimator = helths.parent.GetComponent<Animator>();
         animator = GetComponent<Animator>();
         Transform gravityTrandform = transform.Find("Gravity").gameObject.transform; 
         gravityDown = gravityTrandform.Find("gravityDown").gameObject.transform;
@@ -272,6 +274,7 @@ public class PlayerContoller : MonoBehaviour
             if (isStopMoveDamage)
             {
                 animator.SetBool("damage", false);
+                helthAnimator.SetBool("damage", false);
                 isStopMoveDamage = false;
             }
         }
@@ -349,26 +352,27 @@ public class PlayerContoller : MonoBehaviour
 
     private Vector3 gravietyDirection(string mode)
     {
-        switch(mode)
+        float step = 500 * Time.deltaTime;
+        switch (mode)
         {
             case "up":
                 Vector3 gravityVectorUp = new Vector3(0, -gravity, 0);
-                gravityBar.transform.eulerAngles = new Vector3(0, 0, 0);
+                gravityBar.transform.rotation = Quaternion.RotateTowards(gravityBar.transform.rotation, Quaternion.Euler(0, 0, 0), step);
                 return gravityVectorUp;
 
             case "left":
                 Vector3 gravityVectorLeft = new Vector3 (gravity, 0, 0);
-                gravityBar.transform.eulerAngles = new Vector3(0, 0, 90);
+                gravityBar.transform.rotation = Quaternion.RotateTowards(gravityBar.transform.rotation, Quaternion.Euler(0, 0, 90f), step);
                 return gravityVectorLeft;
 
             case "right":
                 Vector3 gravityVectorRight = new Vector3(-gravity, 0, 0);
-                gravityBar.transform.eulerAngles = new Vector3(0, 0, -90);
+                gravityBar.transform.rotation = Quaternion.RotateTowards(gravityBar.transform.rotation, Quaternion.Euler(0, 0, -90f), step);
                 return gravityVectorRight;
 
             default:
                 Vector3 gravityVectorDown = new Vector3(0, gravity, 0);
-                gravityBar.transform.eulerAngles = new Vector3(0, 0, 180);
+                gravityBar.transform.rotation = Quaternion.RotateTowards(gravityBar.transform.rotation, Quaternion.Euler(0, 0, 180f), step);
                 return gravityVectorDown;
         }
     }
@@ -693,6 +697,7 @@ public class PlayerContoller : MonoBehaviour
             else
             {
                 animator.SetBool("damage", true);
+                helthAnimator.SetBool("damage", true);
                 isStopMoveDamage = true;
                 rb.mass = 3;
                 damageCountor = 0.4f;

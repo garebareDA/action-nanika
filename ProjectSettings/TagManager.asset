@@ -7,6 +7,7 @@ TagManager:
   - ground
   - enemy
   - trap
+  - miss
   layers:
   - Default
   - TransparentFX

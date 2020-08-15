@@ -2,9 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class PlayerContoller : MonoBehaviour
 {
+    private GameObject GameManager;
+
+    private GameObject CanvasPause;
+    private Button backButton;
+
+    private bool pause;
+    private bool miss;
+
     private Rigidbody2D rb;
     [SerializeField] private ContactFilter2D filter2d;
     private Animator animator;
@@ -84,6 +93,7 @@ public class PlayerContoller : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        GameManager = GameObject.Find("Game Manager");
         rb = GetComponent<Rigidbody2D>();
         helths = helthObject.transform;
         helthAnimator = helths.parent.GetComponent<Animator>();
@@ -100,22 +110,29 @@ public class PlayerContoller : MonoBehaviour
         dashEffectOver = transform.Find("dashEffectOver").gameObject;
         particle = Camera.main.transform.Find("Concentration");
         AudioSource[] audios = transform.GetComponents<AudioSource>();
+        CanvasPause = GameObject.Find("CanvasPause");
+        backButton = CanvasPause.transform.Find("backButton").GetComponent<Button>();
+        CanvasPause.SetActive(false);
         dashSound = audios[0];
         jumpSound = audios[1];
         playerDamageSound = audios[2];
         walkSound = audios[3];
         dashEffectSound = audios[4];
 
-        dashSound.volume = 0;
-        dashSound.Play();
-  
-        walkSound.volume = 0;
+
         walkSound.Play();
+        walkSound.volume = 0;
+
+        dashSound.Play();
+        dashSound.volume = 0;
 
         helth = 5;
 
         time = 0;
         minite = 0;
+
+        pause = false;
+        miss = false;
     }
 
     // Update is called once per frame
@@ -180,6 +197,22 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape) && !pause && !miss)
+        {
+            activePause();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape) && pause)
+        {
+            unPause();
+        }
+
+        if (pause)
+        {
+            return;
+        }
+
         time += Time.deltaTime;
         if(time >= 60f)
         {
@@ -293,7 +326,7 @@ public class PlayerContoller : MonoBehaviour
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
-                transform.position = warpVector + new Vector2(0, 1);
+                rb.position = warpVector + new Vector2(0, 1);
                 Instantiate(warpEffect, warpVector, transform.rotation);
             }
         }
@@ -323,6 +356,7 @@ public class PlayerContoller : MonoBehaviour
         if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
         {
             fadeOut();
+            fadeOutWalk();
             rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
@@ -681,13 +715,36 @@ public class PlayerContoller : MonoBehaviour
 
     private void helthCount()
     {
+        if(helth == 0)
+        {
+            return;
+        }
         helths.GetChild(helth + 1).gameObject.SetActive(false);
         helths.GetChild(helth).gameObject.SetActive(true);
     }
 
+    public void unPause()
+    {
+        if (pause)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            pause = false;
+            CanvasPause.SetActive(false);
+            Time.timeScale = 1f;
+        }
+    }
+
+    private void activePause()
+    {
+        pause = true;
+        CanvasPause.SetActive(true);
+        EventSystem.current.SetSelectedGameObject(backButton.gameObject, null);
+        Time.timeScale = 0f;
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
+        if (collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
         {
             if (dash && collision.gameObject.tag == "enemy")
             {
@@ -703,8 +760,19 @@ public class PlayerContoller : MonoBehaviour
                 damageCountor = 0.4f;
                 playerDamageSound.Play();
                 helth--;
-                helthCount();
+                if (helth == 0)
+                {
+                    GameManager.SendMessage("miss");
+                }
+                else
+                {
+                    helthCount();
+                }
             }
+        }else if(collision.gameObject.tag == "miss")
+        {
+            miss = true;
+            GameManager.SendMessage("miss");
         }
     }
 }

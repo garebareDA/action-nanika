@@ -25,7 +25,6 @@ public class GameManager: MonoBehaviour
         restartPostion = Player.transform.position;
         restartPostionButton = Player.transform.position;
         SceneManager.sceneLoaded += OnSceneLoaded;
-        miss();
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -40,7 +39,7 @@ public class GameManager: MonoBehaviour
         
     }
 
-    IEnumerator miss()
+    IEnumerator miss(float[] times)
     {
         missPlayer = true;
         GameObject missEffects = Instantiate(missEffect);
@@ -56,6 +55,7 @@ public class GameManager: MonoBehaviour
                 Player.transform.position = restartPostion;
                 missEffects.GetComponent<Animator>().SetBool("out", true);
                 yield return new WaitForSeconds(1f);
+                Player.SendMessage("respwarn", times);
                 asyncLoad.allowSceneActivation = true;
                 Destroy(missEffects);
                 missPlayer = false;

@@ -27,7 +27,7 @@ public class PlayerContoller : MonoBehaviour
 
     public Text timeText;
     private float time;
-    private int minite;
+    private float minite;
 
     private AudioSource dashSound;
     private AudioSource jumpSound;
@@ -197,13 +197,13 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) && !pause && !miss)
+        if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Joystick1Button7)) && !pause && !miss)
         {
             activePause();
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape) && pause)
+        if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Joystick1Button7)) && pause)
         {
             unPause();
         }
@@ -240,12 +240,12 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !stop)
+        if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Joystick1Button2)) && !stop)
         {
             isDash = true;
         }
 
-        if (Input.GetKey(KeyCode.LeftShift) && moveInput != 0 && isDash)
+        if ((Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Joystick1Button2)) && moveInput != 0 && isDash)
         {
             speedUp = 2f;
             animator.SetBool("dash", true);
@@ -270,7 +270,7 @@ public class PlayerContoller : MonoBehaviour
             fadeOut();
         }
 
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.Joystick1Button2))
         {
             playDashsound = true;
         }
@@ -293,10 +293,12 @@ public class PlayerContoller : MonoBehaviour
             else
             {
                 fadeOutWalk();
+                fadeOut();
             }
 
             if (dash && moveInput != 0)
             {
+                fadeOutWalk();
                 fadeIn();
             }
             else
@@ -320,7 +322,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", true);
             particleSmork.SetActive(false);
             
-            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
+            if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button0)) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
                 Time.timeScale = 0.8f;
                 warpVectorTmp = warpVector;
@@ -343,7 +345,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if(isGounded && Input.GetKeyDown(KeyCode.Space) && !jumpStop)
+        if(isGounded && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button0)) && !jumpStop)
         {
             jumpSound.Play();
             rb.mass = 2;
@@ -353,7 +355,7 @@ public class PlayerContoller : MonoBehaviour
             jump(gravityMode, jumpForce);
         }
 
-        if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
+        if ((Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.Joystick1Button0)) && isJumpinig == true)
         {
             fadeOut();
             fadeOutWalk();
@@ -371,7 +373,7 @@ public class PlayerContoller : MonoBehaviour
             }
         }
 
-        if(Input.GetKeyUp(KeyCode.Space))
+        if(Input.GetKeyUp(KeyCode.Space) || Input.GetKeyUp(KeyCode.Joystick1Button0))
         {
             jumpSound.Stop();
             rb.mass = 2;
@@ -413,23 +415,26 @@ public class PlayerContoller : MonoBehaviour
 
     private void jump(string mode, float jumpForce)
     {
-        switch (mode)
+        if (!jumpStop)
         {
-            case "up":
-                rb.velocity = Vector2.down * jumpForce;
-                break;
+            switch (mode)
+            {
+                case "up":
+                    rb.velocity = Vector2.down * jumpForce;
+                    break;
 
-            case "left":
-                rb.velocity = Vector2.right * jumpForce;
-                break;
+                case "left":
+                    rb.velocity = Vector2.right * jumpForce;
+                    break;
 
-            case "right":
-                rb.velocity = Vector2.left * jumpForce;
-                break;
+                case "right":
+                    rb.velocity = Vector2.left * jumpForce;
+                    break;
 
-            default:
-                rb.velocity = Vector2.up * jumpForce;
-                break;
+                default:
+                    rb.velocity = Vector2.up * jumpForce;
+                    break;
+            }
         }
     }
 
@@ -605,7 +610,7 @@ public class PlayerContoller : MonoBehaviour
 
     void fadeIn()
     {
-        if (!dashSoundIsVolume && Input.GetKey(KeyCode.LeftShift))
+        if (!dashSoundIsVolume && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Joystick1Button2)))
         {
             fadeDeltaTime += Time.deltaTime;
             if(fadeDeltaTime >= fadeSecond)
@@ -742,9 +747,16 @@ public class PlayerContoller : MonoBehaviour
         Time.timeScale = 0f;
     }
 
+    public void respwarn(float[] times)
+    {
+        time = times[0];
+        minite = times[1];
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
+        float[] times = new float[] { time, minite};
+        if ((collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap") && !isStopMoveDamage)
         {
             if (dash && collision.gameObject.tag == "enemy")
             {
@@ -762,7 +774,7 @@ public class PlayerContoller : MonoBehaviour
                 helth--;
                 if (helth == 0)
                 {
-                    GameManager.SendMessage("miss");
+                    GameManager.SendMessage("miss", times);
                 }
                 else
                 {
@@ -772,7 +784,7 @@ public class PlayerContoller : MonoBehaviour
         }else if(collision.gameObject.tag == "miss")
         {
             miss = true;
-            GameManager.SendMessage("miss");
+            GameManager.SendMessage("miss", times);
         }
     }
 }

@@ -85,8 +85,8 @@ public class GameManager: MonoBehaviour
 
     public IEnumerator title()
     {
-        Player.SendMessage("unPause");
         GameObject missEffects = Instantiate(missEffect);
+        Time.timeScale = 1f;
         DontDestroyOnLoad(missEffects);
         missEffects.transform.Find("Text").gameObject.GetComponent<Text>().text = "Title";
         yield return new WaitForSeconds(0.8f);

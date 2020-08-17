@@ -20,8 +20,8 @@ public class GameManager: MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        DontDestroyOnLoad(gameObject);
         Player = GameObject.FindGameObjectWithTag("Player");
+        DontDestroyOnLoad(gameObject);
         restartPostion = Player.transform.position;
         restartPostionButton = Player.transform.position;
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -31,12 +31,6 @@ public class GameManager: MonoBehaviour
     {
         Player = GameObject.FindGameObjectWithTag("Player");
         restartPostionButton = Player.transform.position;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     IEnumerator miss(float[] times)
@@ -89,9 +83,28 @@ public class GameManager: MonoBehaviour
         }
     }
 
-    public void setRestartPotiosn(Vector3 potion)
+    public IEnumerator title()
     {
-        restartPostion = potion;
+        Player.SendMessage("unPause");
+        GameObject missEffects = Instantiate(missEffect);
+        DontDestroyOnLoad(missEffects);
+        missEffects.transform.Find("Text").gameObject.GetComponent<Text>().text = "Title";
+        yield return new WaitForSeconds(0.8f);
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("title");
+
+        while (true)
+        {
+            yield return null;
+            if (asyncLoad.progress >= 0.9f)
+            {
+                Player.transform.position = restartPostionButton;
+                missEffects.GetComponent<Animator>().SetBool("out", true);
+                yield return new WaitForSeconds(1f);
+                asyncLoad.allowSceneActivation = true;
+                Destroy(missEffects);
+                break;
+            }
+        }
     }
 
     IEnumerator waitForLoadScene(int stageNum)

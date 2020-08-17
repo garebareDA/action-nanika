@@ -5,10 +5,10 @@ using UnityEngine;
 public class select : MonoBehaviour
 {
     // Start is called before the first frame update
-    private GameObject GameMnager;
+    private GameObject gameMnager;
     public void OnButtonClick()
     {
-        GameMnager = GameObject.Find("GameMnager");
-        GameMnager.SendMessage("backToSelect");
+        gameMnager = GameObject.Find("Game Manager");
+        gameMnager.SendMessage("title");
     }
 }

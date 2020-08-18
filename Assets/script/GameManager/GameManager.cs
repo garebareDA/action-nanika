@@ -107,6 +107,31 @@ public class GameManager: MonoBehaviour
         }
     }
 
+    public IEnumerator goal(string time)
+    {
+        GameObject missEffects = Instantiate(missEffect);
+        Time.timeScale = 1f;
+        DontDestroyOnLoad(missEffects);
+        missEffects.transform.Find("Text").gameObject.GetComponent<Text>().text = "Goal";
+        missEffects.transform.Find("Text (1)").gameObject.GetComponent<Text>().text = time;
+        yield return new WaitForSeconds(0.8f);
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("title");
+
+        while (true)
+        {
+            yield return null;
+            if (asyncLoad.progress >= 0.9f)
+            {
+                Player.transform.position = restartPostionButton;
+                missEffects.GetComponent<Animator>().SetBool("out", true);
+                yield return new WaitForSeconds(1f);
+                asyncLoad.allowSceneActivation = true;
+                Destroy(missEffects);
+                break;
+            }
+        }
+    }
+
     IEnumerator waitForLoadScene(int stageNum)
     {
         yield return new WaitForSeconds(20);

@@ -45,8 +45,9 @@ public class whieelEnemy : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
-    {   dashRays();
+    void FixedUpdate()
+    {
+        dashRays();
         rayGravity();
 
         if(counter > 0)
@@ -54,7 +55,7 @@ public class whieelEnemy : MonoBehaviour
             counter -= Time.deltaTime;
         }
 
-        if (!reset)
+        if (reset)
         {
             Vector3 gravityVector = gravietyDirection(gravityMode);
              rb.AddForce(gravityVector);
@@ -173,7 +174,7 @@ public class whieelEnemy : MonoBehaviour
         {
             myRender.color = new Color(myRender.color.r, myRender.color.g, myRender.color.b, 100);
             gameObject.GetComponent<Collider2D>().enabled = true;
-            reset = false;    
+            reset = true;    
         }
         speed = speedTmp;
     }
@@ -183,7 +184,7 @@ public class whieelEnemy : MonoBehaviour
         transform.position = firstPosition;
         myRender.color = new Color(myRender.color.r, myRender.color.g, myRender.color.b, 0) ;
         gameObject.GetComponent<Collider2D>().enabled = false;
-        reset = true;
+        reset = false;
         speedTmp = speed;
         speed = 0;
         counter = 0.1f;

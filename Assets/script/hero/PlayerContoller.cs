@@ -90,6 +90,8 @@ public class PlayerContoller : MonoBehaviour
     private GameObject dashEffectOver;
     private Transform particle;
 
+    private bool trigger = false;
+ 
     // Start is called before the first frame update
     void Start()
     {
@@ -138,7 +140,13 @@ public class PlayerContoller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (pause)
+        {
+            return;
+        }
         rayGravity();
+        Vector3 gravityVector = gravietyDirection(gravityMode);
+        rb.AddForce(gravityVector);
         moveInput = Input.GetAxisRaw("Horizontal");
 
         if(attackCounter > 0)
@@ -222,8 +230,6 @@ public class PlayerContoller : MonoBehaviour
         timeText.text = "Time " + minite.ToString("00") + ":" + string.Format("{00:00.00}", time);
 
         rayGravity();
-        Vector3 gravityVector = gravietyDirection(gravityMode);
-        rb.AddForce(gravityVector);
 
         if (0 <= damageCountor)
         {
@@ -284,7 +290,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", false);
             animator.SetBool("right", false);
             particleSmork.SetActive(true);
-            rb.mass = 0.5f;
+            rb.mass = 0.3f;
 
             if(moveInput != 0 && !dash)
             {
@@ -317,7 +323,7 @@ public class PlayerContoller : MonoBehaviour
         {
             fadeOut();
             fadeOutWalk();
-            rb.mass = 0.5f;
+            rb.mass = 0.3f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
             particleSmork.SetActive(false);
@@ -781,10 +787,26 @@ public class PlayerContoller : MonoBehaviour
                     helthCount();
                 }
             }
-        }else if(collision.gameObject.tag == "miss")
+        }
+    }
+
+    public void reset(string mode)
+    {
+        float[] times = new float[] { time, minite };
+        if (!trigger)
         {
-            miss = true;
-            GameManager.SendMessage("miss", times);
+            if (mode == "miss")
+            {
+                miss = true;
+                GameManager.SendMessage("miss", times);
+                trigger = true;
+            }
+            else if(mode == "goal")
+            {
+                string timeSend = "Time " + minite.ToString("00") + ":" + string.Format("{00:00.00}", time);
+                GameManager.SendMessage("goal", timeSend);
+                trigger = true;
+            }
         }
     }
 }

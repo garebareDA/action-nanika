@@ -11,7 +11,7 @@ public class title : MonoBehaviour
 
     void Start()
     {
-        Button button = transform.Find("Button").GetComponent<Button>();
+        Button button = transform.Find("buttons").transform.Find("Button").GetComponent<Button>();
         EventSystem.current.SetSelectedGameObject(button.gameObject, null);
     }
 }

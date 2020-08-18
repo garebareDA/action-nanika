@@ -7,6 +7,8 @@ TagManager:
   - ground
   - enemy
   - trap
+  - miss
+  - goal
   layers:
   - Default
   - TransparentFX

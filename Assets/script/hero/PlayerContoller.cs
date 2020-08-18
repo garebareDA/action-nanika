@@ -2,9 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class PlayerContoller : MonoBehaviour
 {
+    private GameObject GameManager;
+
+    private GameObject CanvasPause;
+    private Button backButton;
+
+    private bool pause;
+    private bool miss;
+
     private Rigidbody2D rb;
     [SerializeField] private ContactFilter2D filter2d;
     private Animator animator;
@@ -18,7 +27,7 @@ public class PlayerContoller : MonoBehaviour
 
     public Text timeText;
     private float time;
-    private int minite;
+    private float minite;
 
     private AudioSource dashSound;
     private AudioSource jumpSound;
@@ -81,9 +90,12 @@ public class PlayerContoller : MonoBehaviour
     private GameObject dashEffectOver;
     private Transform particle;
 
+    private bool trigger = false;
+ 
     // Start is called before the first frame update
     void Start()
     {
+        GameManager = GameObject.Find("Game Manager");
         rb = GetComponent<Rigidbody2D>();
         helths = helthObject.transform;
         helthAnimator = helths.parent.GetComponent<Animator>();
@@ -100,28 +112,41 @@ public class PlayerContoller : MonoBehaviour
         dashEffectOver = transform.Find("dashEffectOver").gameObject;
         particle = Camera.main.transform.Find("Concentration");
         AudioSource[] audios = transform.GetComponents<AudioSource>();
+        CanvasPause = GameObject.Find("CanvasPause");
+        backButton = CanvasPause.transform.Find("backButton").GetComponent<Button>();
+        CanvasPause.SetActive(false);
         dashSound = audios[0];
         jumpSound = audios[1];
         playerDamageSound = audios[2];
         walkSound = audios[3];
         dashEffectSound = audios[4];
 
-        dashSound.volume = 0;
-        dashSound.Play();
-  
-        walkSound.volume = 0;
+
         walkSound.Play();
+        walkSound.volume = 0;
+
+        dashSound.Play();
+        dashSound.volume = 0;
 
         helth = 5;
 
         time = 0;
         minite = 0;
+
+        pause = false;
+        miss = false;
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
+        if (pause)
+        {
+            return;
+        }
         rayGravity();
+        Vector3 gravityVector = gravietyDirection(gravityMode);
+        rb.AddForce(gravityVector);
         moveInput = Input.GetAxisRaw("Horizontal");
 
         if(attackCounter > 0)
@@ -180,6 +205,22 @@ public class PlayerContoller : MonoBehaviour
 
     void Update()
     {
+        if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Joystick1Button7)) && !pause && !miss)
+        {
+            activePause();
+            return;
+        }
+
+        if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Joystick1Button7)) && pause)
+        {
+            unPause();
+        }
+
+        if (pause)
+        {
+            return;
+        }
+
         time += Time.deltaTime;
         if(time >= 60f)
         {
@@ -189,8 +230,6 @@ public class PlayerContoller : MonoBehaviour
         timeText.text = "Time " + minite.ToString("00") + ":" + string.Format("{00:00.00}", time);
 
         rayGravity();
-        Vector3 gravityVector = gravietyDirection(gravityMode);
-        rb.AddForce(gravityVector);
 
         if (0 <= damageCountor)
         {
@@ -207,12 +246,12 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !stop)
+        if ((Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.Joystick1Button2)) && !stop)
         {
             isDash = true;
         }
 
-        if (Input.GetKey(KeyCode.LeftShift) && moveInput != 0 && isDash)
+        if ((Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Joystick1Button2)) && moveInput != 0 && isDash)
         {
             speedUp = 2f;
             animator.SetBool("dash", true);
@@ -237,7 +276,7 @@ public class PlayerContoller : MonoBehaviour
             fadeOut();
         }
 
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.Joystick1Button2))
         {
             playDashsound = true;
         }
@@ -251,7 +290,7 @@ public class PlayerContoller : MonoBehaviour
             animator.SetBool("down", false);
             animator.SetBool("right", false);
             particleSmork.SetActive(true);
-            rb.mass = 0.5f;
+            rb.mass = 0.3f;
 
             if(moveInput != 0 && !dash)
             {
@@ -260,10 +299,12 @@ public class PlayerContoller : MonoBehaviour
             else
             {
                 fadeOutWalk();
+                fadeOut();
             }
 
             if (dash && moveInput != 0)
             {
+                fadeOutWalk();
                 fadeIn();
             }
             else
@@ -282,18 +323,18 @@ public class PlayerContoller : MonoBehaviour
         {
             fadeOut();
             fadeOutWalk();
-            rb.mass = 0.5f;
+            rb.mass = 0.3f;
             attackColider.SetActive(true);
             animator.SetBool("down", true);
             particleSmork.SetActive(false);
             
-            if (Input.GetKeyDown(KeyCode.Space) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
+            if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button0)) && attackCounter <= 0 && warpVector != warpVectorTmp && isAttack && !isStopMoveDamage)
             {
                 Time.timeScale = 0.8f;
                 warpVectorTmp = warpVector;
                 attackColider.gameObject.SendMessage("attackDestoroy");
                 attackCounter = attackTime;
-                transform.position = warpVector + new Vector2(0, 1);
+                rb.position = warpVector + new Vector2(0, 1);
                 Instantiate(warpEffect, warpVector, transform.rotation);
             }
         }
@@ -310,7 +351,7 @@ public class PlayerContoller : MonoBehaviour
             return;
         }
 
-        if(isGounded && Input.GetKeyDown(KeyCode.Space) && !jumpStop)
+        if(isGounded && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Joystick1Button0)) && !jumpStop)
         {
             jumpSound.Play();
             rb.mass = 2;
@@ -320,9 +361,10 @@ public class PlayerContoller : MonoBehaviour
             jump(gravityMode, jumpForce);
         }
 
-        if (Input.GetKey(KeyCode.Space) && isJumpinig == true)
+        if ((Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.Joystick1Button0)) && isJumpinig == true)
         {
             fadeOut();
+            fadeOutWalk();
             rb.mass = 2;
             if (jumpTimeCounter > 0)
             {
@@ -337,7 +379,7 @@ public class PlayerContoller : MonoBehaviour
             }
         }
 
-        if(Input.GetKeyUp(KeyCode.Space))
+        if(Input.GetKeyUp(KeyCode.Space) || Input.GetKeyUp(KeyCode.Joystick1Button0))
         {
             jumpSound.Stop();
             rb.mass = 2;
@@ -379,23 +421,26 @@ public class PlayerContoller : MonoBehaviour
 
     private void jump(string mode, float jumpForce)
     {
-        switch (mode)
+        if (!jumpStop)
         {
-            case "up":
-                rb.velocity = Vector2.down * jumpForce;
-                break;
+            switch (mode)
+            {
+                case "up":
+                    rb.velocity = Vector2.down * jumpForce;
+                    break;
 
-            case "left":
-                rb.velocity = Vector2.right * jumpForce;
-                break;
+                case "left":
+                    rb.velocity = Vector2.right * jumpForce;
+                    break;
 
-            case "right":
-                rb.velocity = Vector2.left * jumpForce;
-                break;
+                case "right":
+                    rb.velocity = Vector2.left * jumpForce;
+                    break;
 
-            default:
-                rb.velocity = Vector2.up * jumpForce;
-                break;
+                default:
+                    rb.velocity = Vector2.up * jumpForce;
+                    break;
+            }
         }
     }
 
@@ -571,7 +616,7 @@ public class PlayerContoller : MonoBehaviour
 
     void fadeIn()
     {
-        if (!dashSoundIsVolume && Input.GetKey(KeyCode.LeftShift))
+        if (!dashSoundIsVolume && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Joystick1Button2)))
         {
             fadeDeltaTime += Time.deltaTime;
             if(fadeDeltaTime >= fadeSecond)
@@ -681,13 +726,43 @@ public class PlayerContoller : MonoBehaviour
 
     private void helthCount()
     {
+        if(helth == 0)
+        {
+            return;
+        }
         helths.GetChild(helth + 1).gameObject.SetActive(false);
         helths.GetChild(helth).gameObject.SetActive(true);
     }
 
+    public void unPause()
+    {
+        if (pause)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            pause = false;
+            CanvasPause.SetActive(false);
+            Time.timeScale = 1f;
+        }
+    }
+
+    private void activePause()
+    {
+        pause = true;
+        CanvasPause.SetActive(true);
+        EventSystem.current.SetSelectedGameObject(backButton.gameObject, null);
+        Time.timeScale = 0f;
+    }
+
+    public void respwarn(float[] times)
+    {
+        time = times[0];
+        minite = times[1];
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap")
+        float[] times = new float[] { time, minite};
+        if ((collision.gameObject.tag == "enemy" || collision.gameObject.tag == "trap") && !isStopMoveDamage)
         {
             if (dash && collision.gameObject.tag == "enemy")
             {
@@ -703,7 +778,34 @@ public class PlayerContoller : MonoBehaviour
                 damageCountor = 0.4f;
                 playerDamageSound.Play();
                 helth--;
-                helthCount();
+                if (helth == 0)
+                {
+                    GameManager.SendMessage("miss", times);
+                }
+                else
+                {
+                    helthCount();
+                }
+            }
+        }
+    }
+
+    public void reset(string mode)
+    {
+        float[] times = new float[] { time, minite };
+        if (!trigger)
+        {
+            if (mode == "miss")
+            {
+                miss = true;
+                GameManager.SendMessage("miss", times);
+                trigger = true;
+            }
+            else if(mode == "goal")
+            {
+                string timeSend = "Time " + minite.ToString("00") + ":" + string.Format("{00:00.00}", time);
+                GameManager.SendMessage("goal", timeSend);
+                trigger = true;
             }
         }
     }

@@ -43,9 +43,10 @@ public class jumpStep : MonoBehaviour
         if (collision.transform.tag == "Player")
         {
             sound.Play();
+            player.velocity = new Vector3(0,0);
             Vector3 shotVector = target - transform.position;
             player.SendMessage("isJump", true);
-            player.transform.position = transform.position + new Vector3(0, 1);
+            player.transform.position = transform.position;
             player.mass = 2;
             player.velocity = shotVector * distance;
             counter = jumpCounter;
